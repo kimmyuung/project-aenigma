@@ -1,6 +1,5 @@
 package com.aenigma.domain.service;
 
-import com.aenigma.domain.entity.*;
 import com.aenigma.domain.room.entity.Room;
 import com.aenigma.domain.room.entity.RoomMember;
 import com.aenigma.domain.room.entity.RoomStatus;

@@ -5,7 +5,6 @@ import com.aenigma.domain.user.entity.User;
 import com.aenigma.domain.user.entity.UserRole;
 import com.aenigma.domain.user.repository.UserRepository;
 import com.aenigma.domain.user.service.UserService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
