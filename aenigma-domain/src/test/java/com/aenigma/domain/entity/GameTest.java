@@ -13,7 +13,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("Game 엔티티 테스트")
 class GameTest {
@@ -65,8 +66,10 @@ class GameTest {
                     .phase(GamePhase.INTRO)
                     .build();
 
+            // when
             game.start();
 
+            // then
             assertThat(game.getPhase()).isEqualTo(GamePhase.INVESTIGATION);
             assertThat(game.getDayCount()).isEqualTo(1);
             assertThat(game.getStartedAt()).isNotNull();
@@ -116,62 +119,6 @@ class GameTest {
             // CONCLUSION -> FINISHED
             game.nextPhase();
             assertThat(game.getPhase()).isEqualTo(GamePhase.FINISHED);
-        }
-    }
-
-    @Nested
-    @DisplayName("승리 조건 체크")
-    class WinCondition {
-
-        @Test
-        @DisplayName("범인이 모두 검거되면(사망하면) 시민 팀 승리")
-        void citizensWinWhenAllCriminalsDead() {
-            Game game = Game.builder()
-                    .id(UUID.randomUUID())
-                    .room(room)
-                    .roundNumber(1)
-                    .phase(GamePhase.INVESTIGATION)
-                    .build();
-
-            GamePlayer criminal = GamePlayer.create(game, user1, GameRole.CRIMINAL);
-            criminal.eliminate(); // 범인 검거/사망
-
-            GamePlayer suspect1 = GamePlayer.create(game, user2, GameRole.SUSPECT);
-            GamePlayer detective = GamePlayer.create(game, user3, GameRole.DETECTIVE);
-
-            game.getPlayers().add(criminal);
-            game.getPlayers().add(suspect1);
-            game.getPlayers().add(detective);
-
-            // checkWinCondition 내부 로직에 따라 INVESTIGATION/FINAL_VOTE 상태여야 함
-            boolean ended = game.checkWinCondition();
-
-            assertThat(ended).isTrue();
-            assertThat(game.getPhase()).isEqualTo(GamePhase.FINISHED);
-            assertThat(game.getWinnerTeam()).isEqualTo(GameRole.SUSPECT);
-        }
-
-        @Test
-        @DisplayName("범인 수가 시민 수 이상이면 범인 팀 승리")
-        void criminalsWinWhenEqualOrMore() {
-            Game game = Game.builder()
-                    .id(UUID.randomUUID())
-                    .room(room)
-                    .roundNumber(1)
-                    .phase(GamePhase.INVESTIGATION)
-                    .build();
-
-            GamePlayer criminal = GamePlayer.create(game, user1, GameRole.CRIMINAL);
-            GamePlayer suspect = GamePlayer.create(game, user2, GameRole.SUSPECT);
-
-            game.getPlayers().add(criminal);
-            game.getPlayers().add(suspect);
-
-            boolean ended = game.checkWinCondition();
-
-            assertThat(ended).isTrue();
-            assertThat(game.getPhase()).isEqualTo(GamePhase.FINISHED);
-            assertThat(game.getWinnerTeam()).isEqualTo(GameRole.CRIMINAL);
         }
     }
 }

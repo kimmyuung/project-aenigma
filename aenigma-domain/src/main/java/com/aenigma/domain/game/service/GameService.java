@@ -107,8 +107,6 @@ public class GameService {
                 .orElseThrow(() -> new IllegalArgumentException("게임을 찾을 수 없습니다."));
 
         // 다음 단계로 진행
-        // 필요하다면 단계 변경 전후로 추가 로직 수행 (예: 투표 집계, 게임 종료 조건 확인 등은 Game.nextPhase() 또는 별도
-        // 메서드에서 처리될 수 있음)
         game.nextPhase();
 
         // 승리 조건 체크

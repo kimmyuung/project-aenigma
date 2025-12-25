@@ -11,6 +11,8 @@ dependencies {
     annotationProcessor("com.querydsl:querydsl-apt:5.1.0:jakarta")
     annotationProcessor("jakarta.annotation:jakarta.annotation-api")
     annotationProcessor("jakarta.persistence:jakarta.persistence-api")
+    
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
 tasks.bootJar { enabled = false }
@@ -22,7 +24,7 @@ val querydslDir = layout.buildDirectory.dir("generated/querydsl")
 sourceSets {
     main {
         java {
-            srcDir(querydslDir)
+            srcDirs("src/main/java", querydslDir)
         }
     }
 }
