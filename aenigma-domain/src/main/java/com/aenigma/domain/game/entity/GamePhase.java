@@ -5,27 +5,27 @@ package com.aenigma.domain.game.entity;
  */
 public enum GamePhase {
     /**
-     * 게임 준비 중 (역할 배정 등)
+     * 게임 시작 및 역할 배정, 오프닝
      */
-    PREPARING,
+    INTRO,
 
     /**
-     * 낮 시간 - 토론 및 추리
+     * 조사 및 대화 시간 (단서 확인, 밀담 등)
      */
-    DAY,
+    INVESTIGATION,
 
     /**
-     * 투표 시간 - 용의자 지목
+     * 최종 범인 지목 투표
      */
-    VOTING,
+    FINAL_VOTE,
 
     /**
-     * 밤 시간 - 범인 행동
+     * 사건의 전말 공개 및 결말
      */
-    NIGHT,
+    CONCLUSION,
 
     /**
-     * 게임 종료
+     * 게임 종료 (방 대기 상태로 복귀)
      */
     FINISHED
 }

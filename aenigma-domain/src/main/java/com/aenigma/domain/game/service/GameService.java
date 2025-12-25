@@ -36,7 +36,7 @@ public class GameService {
         Game game = Game.builder()
                 .room(room)
                 .roundNumber((int) roundNumber)
-                .phase(GamePhase.PREPARING)
+                .phase(GamePhase.INTRO)
                 .dayCount(0)
                 .build();
 
@@ -70,27 +70,17 @@ public class GameService {
     private List<GameRole> generateRoleList(int playerCount) {
         List<GameRole> roles = new ArrayList<>();
 
-        // 기본 구성: 범인 1명, 탐정 1명, 나머지는 시민
-        // 6명 이상: 범인 2명, 의사 1명 추가
-        if (playerCount >= 6) {
-            roles.add(GameRole.KILLER);
-            roles.add(GameRole.KILLER);
+        // 기본 구성: 범인 1명, 탐정 1명, 나머지 용의자
+        // (실제 머더미스터리는 시나리오에 따라 고정되지만, 여기서는 임시 로직)
+        roles.add(GameRole.CRIMINAL);
+
+        if (playerCount > 1) { // 2명 이상일 때 탐정 추가
             roles.add(GameRole.DETECTIVE);
-            roles.add(GameRole.DOCTOR);
-            for (int i = 4; i < playerCount; i++) {
-                roles.add(GameRole.CITIZEN);
-            }
-        } else if (playerCount >= 4) {
-            roles.add(GameRole.KILLER);
-            roles.add(GameRole.DETECTIVE);
-            for (int i = 2; i < playerCount; i++) {
-                roles.add(GameRole.CITIZEN);
-            }
-        } else {
-            // 최소 인원 (3명)
-            roles.add(GameRole.KILLER);
-            roles.add(GameRole.DETECTIVE);
-            roles.add(GameRole.CITIZEN);
+        }
+
+        // 나머지 용의자
+        for (int i = 2; i < playerCount; i++) {
+            roles.add(GameRole.SUSPECT);
         }
 
         return roles;
@@ -116,11 +106,9 @@ public class GameService {
         Game game = gameRepository.findById(gameId)
                 .orElseThrow(() -> new IllegalArgumentException("게임을 찾을 수 없습니다."));
 
-        // 다음 단계로 진행 전 플레이어 턴 초기화
-        if (game.getPhase() == GamePhase.NIGHT) {
-            game.getPlayers().forEach(GamePlayer::resetTurn);
-        }
-
+        // 다음 단계로 진행
+        // 필요하다면 단계 변경 전후로 추가 로직 수행 (예: 투표 집계, 게임 종료 조건 확인 등은 Game.nextPhase() 또는 별도
+        // 메서드에서 처리될 수 있음)
         game.nextPhase();
 
         // 승리 조건 체크
@@ -130,19 +118,7 @@ public class GameService {
     }
 
     /**
-     * 플레이어 처형 (투표 결과)
-     */
-    @Transactional
-    public GamePlayer executePlayer(UUID gameId, UUID userId) {
-        GamePlayer player = gamePlayerRepository.findByGameIdAndUserId(gameId, userId)
-                .orElseThrow(() -> new IllegalArgumentException("플레이어를 찾을 수 없습니다."));
-
-        player.execute();
-        return gamePlayerRepository.save(player);
-    }
-
-    /**
-     * 플레이어 제거 (범인 행동)
+     * 플레이어 제거 (사망 처리)
      */
     @Transactional
     public GamePlayer eliminatePlayer(UUID gameId, UUID userId) {
@@ -150,18 +126,6 @@ public class GameService {
                 .orElseThrow(() -> new IllegalArgumentException("플레이어를 찾을 수 없습니다."));
 
         player.eliminate();
-        return gamePlayerRepository.save(player);
-    }
-
-    /**
-     * 플레이어 보호 (의사 행동)
-     */
-    @Transactional
-    public GamePlayer protectPlayer(UUID gameId, UUID userId) {
-        GamePlayer player = gamePlayerRepository.findByGameIdAndUserId(gameId, userId)
-                .orElseThrow(() -> new IllegalArgumentException("플레이어를 찾을 수 없습니다."));
-
-        player.protect();
         return gamePlayerRepository.save(player);
     }
 

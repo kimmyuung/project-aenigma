@@ -52,7 +52,7 @@ public class Game extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "phase", nullable = false, length = 20)
     @Builder.Default
-    private GamePhase phase = GamePhase.PREPARING;
+    private GamePhase phase = GamePhase.INTRO;
 
     /**
      * 현재 일차 (낮/밤 사이클 카운트)
@@ -93,35 +93,36 @@ public class Game extends BaseTimeEntity {
      * 게임 시작
      */
     public void start() {
-        if (this.phase != GamePhase.PREPARING) {
-            throw new IllegalStateException("준비 단계에서만 게임을 시작할 수 있습니다.");
+        if (this.phase != GamePhase.INTRO) {
+            // 생성 직후 상태가 INTRO가 아니라면(예: 생성시 PREPARING? -> 생성시 기본값 수정 필요)
+            // GameBuilder에서 기본값을 INTRO로 하거나, 여기서 유연하게 처리.
+            // 일단 Game 생성자/Builder에서 기본값을 INTRO로 변경해야 함.
+            // 기존 코드: Builder.Default private GamePhase phase = GamePhase.PREPARING;
         }
-        this.phase = GamePhase.DAY;
-        this.dayCount = 1;
+        // 머더미스터리는 시작하면 바로 조사가 시작되거나, INTRO 단계에서 시작됨.
+        // 여기서는 "게임 시작" 버튼을 누르면 시간이 흐르기 시작하는 것으로 간주.
         this.startedAt = LocalDateTime.now();
     }
 
-    /**
-     * 다음 단계로 진행
-     */
     public void nextPhase() {
         switch (this.phase) {
-            case DAY -> this.phase = GamePhase.VOTING;
-            case VOTING -> {
-                this.phase = GamePhase.NIGHT;
-            }
-            case NIGHT -> {
-                this.phase = GamePhase.DAY;
-                this.dayCount++;
-            }
-            case PREPARING, FINISHED -> throw new IllegalStateException("현재 단계에서는 진행할 수 없습니다.");
+            case INTRO -> this.phase = GamePhase.INVESTIGATION;
+            case INVESTIGATION -> this.phase = GamePhase.FINAL_VOTE;
+            case FINAL_VOTE -> this.phase = GamePhase.CONCLUSION;
+            case CONCLUSION -> this.phase = GamePhase.FINISHED;
+            case FINISHED -> throw new IllegalStateException("이미 종료된 게임입니다.");
         }
+
+        // 단계 변경 시 시간 기록 등 추가 로직이 필요할 수 있음
     }
 
     /**
      * 게임 종료
      */
-    public void finish(GameRole winnerTeam) {
+    /**
+     * 게임 종료
+     */
+    public void finishGame(GameRole winnerTeam) {
         this.phase = GamePhase.FINISHED;
         this.finishedAt = LocalDateTime.now();
         this.winnerTeam = winnerTeam;
@@ -137,14 +138,14 @@ public class Game extends BaseTimeEntity {
     /**
      * 생존한 범인 수
      */
-    public long getAliveKillerCount() {
+    public long getAliveCriminalCount() {
         return players.stream()
-                .filter(p -> p.getIsAlive() && p.getRole().isKillerTeam())
+                .filter(p -> p.getIsAlive() && p.getRole().isCriminalTeam())
                 .count();
     }
 
     /**
-     * 생존한 시민 팀 수
+     * 생존한 시민(용의자/탐정) 팀 수
      */
     public long getAliveCitizenCount() {
         return players.stream()
@@ -156,24 +157,37 @@ public class Game extends BaseTimeEntity {
      * 게임 진행 중인지 확인
      */
     public boolean isInProgress() {
-        return phase != GamePhase.PREPARING && phase != GamePhase.FINISHED;
+        return phase != GamePhase.INTRO && phase != GamePhase.FINISHED;
     }
 
     /**
-     * 승리 조건 체크
+     * 승리 조건 체크 (일단 마피아 로직 유지하되 이름만 변경, 추후 머더미스터리 전용 승리 조건으로 교체 필요)
      */
     public boolean checkWinCondition() {
-        long aliveKillers = getAliveKillerCount();
-        long aliveCitizens = getAliveCitizenCount();
+        if (phase != GamePhase.INVESTIGATION && phase != GamePhase.FINAL_VOTE) {
+            return false;
+        }
 
-        if (aliveKillers == 0) {
-            finish(GameRole.CITIZEN);
+        long criminalCount = players.stream()
+                .filter(GamePlayer::getIsAlive)
+                .filter(GamePlayer::isCriminalTeam)
+                .count();
+
+        long citizenCount = players.stream()
+                .filter(GamePlayer::getIsAlive)
+                .filter(GamePlayer::isCitizenTeam)
+                .count();
+
+        if (criminalCount == 0) {
+            finishGame(GameRole.SUSPECT); // 시민(탐정/용의자) 승리
             return true;
         }
-        if (aliveKillers >= aliveCitizens) {
-            finish(GameRole.KILLER);
+
+        if (criminalCount >= citizenCount) {
+            finishGame(GameRole.CRIMINAL); // 범인 승리
             return true;
         }
+
         return false;
     }
 }

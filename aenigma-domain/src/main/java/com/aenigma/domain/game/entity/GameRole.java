@@ -7,27 +7,20 @@ public enum GameRole {
     /**
      * 범인 - 시민을 제거하는 역할
      */
-    KILLER("범인", "밤에 한 명을 제거할 수 있습니다."),
+    /**
+     * 범인 - 살인 사건의 진범
+     */
+    CRIMINAL("범인", "정체를 들키지 않도록 행동하세요."),
 
     /**
-     * 탐정 - 플레이어의 역할을 조사하는 역할
+     * 탐정 - 사건을 수사하는 탐정
      */
-    DETECTIVE("탐정", "밤에 한 명의 역할을 확인할 수 있습니다."),
+    DETECTIVE("탐정", "단서를 모아 범인을 찾아내세요."),
 
     /**
-     * 시민 - 투표로 범인을 찾아내는 역할
+     * 용의자 - 사건의 용의자로 지목된 사람
      */
-    CITIZEN("시민", "투표를 통해 범인을 찾아내세요."),
-
-    /**
-     * 의사 - 플레이어를 보호하는 역할
-     */
-    DOCTOR("의사", "밤에 한 명을 범인으로부터 보호할 수 있습니다."),
-
-    /**
-     * 경찰 - 체포 능력을 가진 역할
-     */
-    POLICE("경찰", "특정 조건에서 용의자를 즉시 체포할 수 있습니다.");
+    SUSPECT("용의자", "자신의 결백을 증명하고 범인을 찾으세요.");
 
     private final String displayName;
     private final String description;
@@ -48,14 +41,17 @@ public enum GameRole {
     /**
      * 마피아(범인) 팀인지 확인
      */
-    public boolean isKillerTeam() {
-        return this == KILLER;
+    /**
+     * 범인 팀인지 확인
+     */
+    public boolean isCriminalTeam() {
+        return this == CRIMINAL;
     }
 
     /**
-     * 시민 팀인지 확인
+     * 시민(탐정/용의자) 팀인지 확인
      */
     public boolean isCitizenTeam() {
-        return this != KILLER;
+        return this != CRIMINAL;
     }
 }

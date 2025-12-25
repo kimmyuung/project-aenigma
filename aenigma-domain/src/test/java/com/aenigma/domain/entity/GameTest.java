@@ -57,33 +57,32 @@ class GameTest {
         @Test
         @DisplayName("준비 상태에서 게임을 시작할 수 있다")
         void canStartFromPreparing() {
+            // given
             Game game = Game.builder()
                     .id(UUID.randomUUID())
                     .room(room)
                     .roundNumber(1)
-                    .phase(GamePhase.PREPARING)
+                    .phase(GamePhase.INTRO)
                     .build();
 
             game.start();
 
-            assertThat(game.getPhase()).isEqualTo(GamePhase.DAY);
+            assertThat(game.getPhase()).isEqualTo(GamePhase.INVESTIGATION);
             assertThat(game.getDayCount()).isEqualTo(1);
             assertThat(game.getStartedAt()).isNotNull();
         }
 
         @Test
-        @DisplayName("준비 상태가 아니면 게임을 시작할 수 없다")
         void cannotStartFromOtherPhase() {
             Game game = Game.builder()
                     .id(UUID.randomUUID())
                     .room(room)
                     .roundNumber(1)
-                    .phase(GamePhase.DAY)
+                    .phase(GamePhase.INVESTIGATION)
                     .build();
 
             assertThatThrownBy(game::start)
-                    .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("준비 단계에서만");
+                    .isInstanceOf(IllegalStateException.class);
         }
     }
 
@@ -92,25 +91,31 @@ class GameTest {
     class GameProgress {
 
         @Test
-        @DisplayName("낮 -> 투표 -> 밤 -> 낮 순서로 진행된다")
+        @DisplayName("INTRO -> INVESTIGATION -> FINAL_VOTE -> CONCLUSION -> FINISHED 순서로 진행된다")
         void phaseProgressesCorrectly() {
             Game game = Game.builder()
                     .id(UUID.randomUUID())
                     .room(room)
                     .roundNumber(1)
-                    .phase(GamePhase.DAY)
-                    .dayCount(1)
+                    .phase(GamePhase.INTRO)
+                    .dayCount(0)
                     .build();
 
+            // INTRO -> INVESTIGATION
             game.nextPhase();
-            assertThat(game.getPhase()).isEqualTo(GamePhase.VOTING);
+            assertThat(game.getPhase()).isEqualTo(GamePhase.INVESTIGATION);
 
+            // INVESTIGATION -> FINAL_VOTE
             game.nextPhase();
-            assertThat(game.getPhase()).isEqualTo(GamePhase.NIGHT);
+            assertThat(game.getPhase()).isEqualTo(GamePhase.FINAL_VOTE);
 
+            // FINAL_VOTE -> CONCLUSION
             game.nextPhase();
-            assertThat(game.getPhase()).isEqualTo(GamePhase.DAY);
-            assertThat(game.getDayCount()).isEqualTo(2);
+            assertThat(game.getPhase()).isEqualTo(GamePhase.CONCLUSION);
+
+            // CONCLUSION -> FINISHED
+            game.nextPhase();
+            assertThat(game.getPhase()).isEqualTo(GamePhase.FINISHED);
         }
     }
 
@@ -119,53 +124,54 @@ class GameTest {
     class WinCondition {
 
         @Test
-        @DisplayName("범인이 모두 사망하면 시민 팀 승리")
-        void citizensWinWhenAllKillersDead() {
+        @DisplayName("범인이 모두 검거되면(사망하면) 시민 팀 승리")
+        void citizensWinWhenAllCriminalsDead() {
             Game game = Game.builder()
                     .id(UUID.randomUUID())
                     .room(room)
                     .roundNumber(1)
-                    .phase(GamePhase.DAY)
+                    .phase(GamePhase.INVESTIGATION)
                     .build();
 
-            GamePlayer killer = GamePlayer.create(game, user1, GameRole.KILLER);
-            killer.execute(); // 범인 사망
+            GamePlayer criminal = GamePlayer.create(game, user1, GameRole.CRIMINAL);
+            criminal.eliminate(); // 범인 검거/사망
 
-            GamePlayer citizen1 = GamePlayer.create(game, user2, GameRole.CITIZEN);
-            GamePlayer citizen2 = GamePlayer.create(game, user3, GameRole.DETECTIVE);
+            GamePlayer suspect1 = GamePlayer.create(game, user2, GameRole.SUSPECT);
+            GamePlayer detective = GamePlayer.create(game, user3, GameRole.DETECTIVE);
 
-            game.getPlayers().add(killer);
-            game.getPlayers().add(citizen1);
-            game.getPlayers().add(citizen2);
+            game.getPlayers().add(criminal);
+            game.getPlayers().add(suspect1);
+            game.getPlayers().add(detective);
 
+            // checkWinCondition 내부 로직에 따라 INVESTIGATION/FINAL_VOTE 상태여야 함
             boolean ended = game.checkWinCondition();
 
             assertThat(ended).isTrue();
             assertThat(game.getPhase()).isEqualTo(GamePhase.FINISHED);
-            assertThat(game.getWinnerTeam()).isEqualTo(GameRole.CITIZEN);
+            assertThat(game.getWinnerTeam()).isEqualTo(GameRole.SUSPECT);
         }
 
         @Test
         @DisplayName("범인 수가 시민 수 이상이면 범인 팀 승리")
-        void killersWinWhenEqualOrMore() {
+        void criminalsWinWhenEqualOrMore() {
             Game game = Game.builder()
                     .id(UUID.randomUUID())
                     .room(room)
                     .roundNumber(1)
-                    .phase(GamePhase.DAY)
+                    .phase(GamePhase.INVESTIGATION)
                     .build();
 
-            GamePlayer killer = GamePlayer.create(game, user1, GameRole.KILLER);
-            GamePlayer citizen = GamePlayer.create(game, user2, GameRole.CITIZEN);
+            GamePlayer criminal = GamePlayer.create(game, user1, GameRole.CRIMINAL);
+            GamePlayer suspect = GamePlayer.create(game, user2, GameRole.SUSPECT);
 
-            game.getPlayers().add(killer);
-            game.getPlayers().add(citizen);
+            game.getPlayers().add(criminal);
+            game.getPlayers().add(suspect);
 
             boolean ended = game.checkWinCondition();
 
             assertThat(ended).isTrue();
             assertThat(game.getPhase()).isEqualTo(GamePhase.FINISHED);
-            assertThat(game.getWinnerTeam()).isEqualTo(GameRole.KILLER);
+            assertThat(game.getWinnerTeam()).isEqualTo(GameRole.CRIMINAL);
         }
     }
 }

@@ -61,89 +61,20 @@ public class GamePlayer extends BaseTimeEntity {
     @Builder.Default
     private Boolean isAlive = true;
 
-    /**
-     * 이번 턴 투표 완료 여부
-     */
-    @Column(name = "has_voted", nullable = false)
-    @Builder.Default
-    private Boolean hasVoted = false;
-
-    /**
-     * 이번 턴 스킬 사용 여부
-     */
-    @Column(name = "has_used_skill", nullable = false)
-    @Builder.Default
-    private Boolean hasUsedSkill = false;
-
-    /**
-     * 보호 상태 여부 (의사에 의해 보호됨)
-     */
-    @Column(name = "is_protected", nullable = false)
-    @Builder.Default
-    private Boolean isProtected = false;
-
     // === Business Methods ===
 
     /**
      * 플레이어 제거 (사망)
      */
     public void eliminate() {
-        if (!this.isProtected) {
-            this.isAlive = false;
-        }
-    }
-
-    /**
-     * 강제 제거 (투표에 의한 처형, 보호 무시)
-     */
-    public void execute() {
         this.isAlive = false;
-    }
-
-    /**
-     * 보호 상태 설정
-     */
-    public void protect() {
-        this.isProtected = true;
-    }
-
-    /**
-     * 턴 초기화 (매 턴 시작시 호출)
-     */
-    public void resetTurn() {
-        this.hasVoted = false;
-        this.hasUsedSkill = false;
-        this.isProtected = false;
-    }
-
-    /**
-     * 투표 완료 처리
-     */
-    public void vote() {
-        if (!this.isAlive) {
-            throw new IllegalStateException("사망한 플레이어는 투표할 수 없습니다.");
-        }
-        this.hasVoted = true;
-    }
-
-    /**
-     * 스킬 사용 처리
-     */
-    public void useSkill() {
-        if (!this.isAlive) {
-            throw new IllegalStateException("사망한 플레이어는 스킬을 사용할 수 없습니다.");
-        }
-        if (this.role == GameRole.CITIZEN) {
-            throw new IllegalStateException("시민은 스킬이 없습니다.");
-        }
-        this.hasUsedSkill = true;
     }
 
     /**
      * 범인 팀인지 확인
      */
-    public boolean isKillerTeam() {
-        return role.isKillerTeam();
+    public boolean isCriminalTeam() {
+        return role.isCriminalTeam();
     }
 
     /**
@@ -161,9 +92,6 @@ public class GamePlayer extends BaseTimeEntity {
                 .user(user)
                 .role(role)
                 .isAlive(true)
-                .hasVoted(false)
-                .hasUsedSkill(false)
-                .isProtected(false)
                 .build();
     }
 }
