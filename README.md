@@ -33,7 +33,7 @@
 ### Backend (Server)
 - **Language**: Java 17
 - **Framework**: Spring Boot 3.x (Multi-module Architecture)
-- **Database**: H2 (Dev) / MySQL (Prod), JPA (Hibernate), QueryDSL
+- **Database**: H2 (Dev) / MariaDB (Prod), JPA (Hibernate), QueryDSL
 - **Real-time**: WebSocket (STOMP)
 - **Build**: Gradle (Kotlin DSL)
 
@@ -50,20 +50,36 @@
 
 ## 📂 Project Structure
 
-Aenigma는 확장성과 유지보수성을 고려하여 **멀티 모듈 아키텍처**로 설계되었습니다.
+Aenigma는 확장성과 유지보수성을 고려하여 **Spring Boot 멀티 모듈 아키텍처**로 설계되었습니다.
 
 ```bash
 aenigma/
-├── aenigma-api/        # REST API 및 WebSocket 엔드포인트 (Presentation Layer)
-├── aenigma-domain/     # 핵심나 비즈니스 로직 및 엔티티 (Domain Layer)
-│   ├── game/           # 게임 진행, 페이즈, 룸 관리
-│   ├── chat/           # 채팅 메시지 처리
-│   ├── vote/           # 투표 시스템
-│   ├── user/           # 사용자 및 인증
-│   └── common/         # 공통 유틸리티
-├── aenigma-mobile/     # React Native 클라이언트 프로젝트
+├── aenigma-api/        # Presentation Layer
+│   └── Controller, WebSocket Handler, Security Config (JWT)
+├── aenigma-domain/     # Business Layer (Core Logic)
+│   ├── game/           # Game Flow (Phase), Room Management
+│   ├── chat/           # Chat History, Message Type (Public/Whisper)
+│   ├── vote/           # Final Vote Logic
+│   └── user/           # User Management
+├── aenigma-mobile/     # Client Layer (React Native)
 └── ...
 ```
+
+## 🧩 Domain Model Details
+
+최근 리팩토링을 통해 **머더 미스터리 전용 로직**으로 최적화되었습니다.
+
+### 1. Game Phase (게임 진행 단계)
+- **`INTRO`**: 게임 시작, 역할(Role) 배정, 오프닝 시나리오 제공.
+- **`INVESTIGATION`**: (핵심) 플레이어 간 대화, 단서 공유, 심문 진행.
+- **`FINAL_VOTE`**: 단 한 번의 투표로 범인을 지목.
+- **`CONCLUSION`**: 결과 발표 및 진상 확인.
+
+### 2. Game Role (역할)
+마피아 게임의 복잡한 스킬(의사, 경찰 등)을 제거하고 순수 추리에 집중합니다.
+- **`CRIMINAL` (범인)**: 자신의 정체를 숨기고 시민들을 혼란스럽게 만들어야 합니다.
+- **`DETECTIVE` (탐정)**: 수사를 주도하며 결정적인 단서를 찾습니다.
+- **`SUSPECT` (용의자)**: 자신의 결백을 증명하고 범인을 찾아내야 합니다.
 
 ---
 
