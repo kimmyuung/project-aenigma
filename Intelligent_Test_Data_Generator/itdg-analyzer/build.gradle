@@ -1,18 +1,44 @@
-plugins {
-    id 'java'
-    id 'org.springframework.boot'
-    id 'io.spring.dependency-management'
-}
+description = 'ITDG Analyzer Service - DB 스키마 분석'
 
 dependencies {
+    // 공통 모듈
     implementation project(':itdg-common')
+
+    // Spring Boot
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+
+    // Database Drivers
     runtimeOnly 'org.postgresql:postgresql'
     runtimeOnly 'com.mysql:mysql-connector-j'
     runtimeOnly 'com.h2database:h2'
+
+    // Connection Pool
     implementation 'com.zaxxer:HikariCP'
-    implementation 'org.apache.commons:commons-dbcp2'
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
+
+    // Actuator
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
+
+    // Static Analysis & Git
+    implementation 'com.github.javaparser:javaparser-core:3.25.7'
+    implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.25.7'
+    implementation 'com.github.jsqlparser:jsqlparser:4.6'
+    implementation 'org.eclipse.jgit:org.eclipse.jgit:6.8.0.202311291450-r'
+
+    // SpringDoc OpenAPI (Swagger UI)
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8'
+
+    // Test
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-test-autoconfigure'
+    testImplementation 'org.springframework.boot:spring-boot-starter-webclient-test'
+    testImplementation 'org.springframework:spring-test'
+    testImplementation 'org.springframework:spring-webmvc'
+
+    // 4.0.0에서 TestRestTemplate을 사용하기 위해 반드시 필요합니다.
+    testImplementation 'org.springframework.boot:spring-boot-resttestclient'
+
+    // 만약 RestClient 기반의 새로운 테스트 클라이언트를 쓴다면 이것도 추천합니다.
+    testImplementation 'org.springframework.boot:spring-boot-starter-restclient'
 }
