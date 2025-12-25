@@ -1,0 +1,79 @@
+spring:
+  application:
+    name: itdg-orchestrator
+  profiles:
+    active: local
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+server:
+  port: 8080
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        max-age: 1800
+
+logging:
+  level:
+    com.itdg: DEBUG
+    org.springframework.web: INFO
+
+# SpringDoc OpenAPI (Swagger UI) 설정
+springdoc:
+  api-docs:
+    path: /api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operations-sorter: method
+    tags-sorter: alpha
+  show-actuator: false
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+
+# Actuator 엔드포인트 설정
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    url: jdbc:postgresql://localhost:5432/itdg
+    username: itdg
+    password: itdg123
+    driver-class-name: org.postgresql.Driver
+
+analyzer:
+  service:
+    url: http://localhost:8081
+
+generator:
+  service:
+    url: http://localhost:8082
+
+mlserver:
+  service:
+    url: http://localhost:8000
