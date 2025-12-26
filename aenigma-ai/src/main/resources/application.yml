@@ -1,0 +1,32 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: aenigma-ai
+  
+  datasource:
+    url: jdbc:mariadb://localhost:3306/aenigma_ai
+    username: ${DB_USERNAME:aenigma}
+    password: ${DB_PASSWORD:aenigma}
+    driver-class-name: org.mariadb.jdbc.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MariaDBDialect
+    show-sql: false
+
+  # AI 설정 (LLM 연동 시 사용)
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+      enabled: false
+
+logging:
+  level:
+    com.aenigma.ai: DEBUG
+    org.hibernate.SQL: DEBUG

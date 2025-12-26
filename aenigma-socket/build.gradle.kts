@@ -5,6 +5,7 @@ dependencies {
 
     // WebSocket (STOMP)
     implementation("org.springframework.boot:spring-boot-starter-websocket")
+    implementation("org.springframework:spring-messaging")
     
     // Security (JWT 인증용)
     implementation("org.springframework.boot:spring-boot-starter-security")
@@ -16,6 +17,7 @@ dependencies {
     implementation("net.dv8tion:JDA:5.0.0-beta.24")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-websocket")
     testImplementation("org.springframework.security:spring-security-test")
 }
 // 이 모듈은 실제 서버로 뜔 것이므로 bootJar enabled = true (기본값)

@@ -48,7 +48,14 @@ public enum ErrorCode {
     // Vote
     ALREADY_VOTED(HttpStatus.CONFLICT, "V001", "이미 투표하셨습니다."),
     CANNOT_VOTE_DEAD_PLAYER(HttpStatus.BAD_REQUEST, "V002", "사망한 플레이어는 투표할 수 없습니다."),
-    CANNOT_VOTE_FOR_DEAD(HttpStatus.BAD_REQUEST, "V003", "사망한 플레이어에게 투표할 수 없습니다.");
+    CANNOT_VOTE_FOR_DEAD(HttpStatus.BAD_REQUEST, "V003", "사망한 플레이어에게 투표할 수 없습니다."),
+
+    // Chat
+    MESSAGE_EMPTY(HttpStatus.BAD_REQUEST, "CH001", "메시지 내용이 비어있습니다."),
+    MESSAGE_TOO_LONG(HttpStatus.BAD_REQUEST, "CH002", "메시지가 너무 깁니다. (최대 500자)"),
+    CANNOT_WHISPER_SELF(HttpStatus.BAD_REQUEST, "CH003", "자신에게 귓속말을 보낼 수 없습니다."),
+    PLAYER_NOT_IN_GAME(HttpStatus.FORBIDDEN, "CH004", "게임에 참여하지 않은 플레이어입니다."),
+    DEAD_PLAYER_CANNOT_CHAT(HttpStatus.FORBIDDEN, "CH005", "사망한 플레이어는 메시지를 보낼 수 없습니다.");
 
     private final HttpStatus status;
     private final String code;

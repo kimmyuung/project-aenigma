@@ -18,10 +18,5 @@ public enum MessageType {
     /**
      * 시스템 메시지 (게임 이벤트 알림)
      */
-    SYSTEM,
-
-    /**
-     * 범인 팀 전용 채팅
-     */
-    CRIMINAL_ONLY
+    SYSTEM
 }

@@ -1,0 +1,231 @@
+.room-detail-page {
+    min-height: 100vh;
+    background: var(--bg-primary);
+}
+
+.room-detail-main {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.loading-container,
+.error-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 50vh;
+    gap: 1rem;
+}
+
+/* Header */
+.room-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.room-title-section h1 {
+    margin: 0 0 0.75rem 0;
+    font-size: 2rem;
+    color: var(--text-primary);
+}
+
+.room-code-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.room-code-badge:hover {
+    background: var(--bg-hover);
+}
+
+.room-code-badge .code-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.room-code-badge .code-value {
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.room-code-badge .copy-icon {
+    opacity: 0.5;
+}
+
+.room-info-badges {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Content */
+.room-content {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+/* Members Section */
+.members-section h2,
+.game-settings h2 {
+    font-size: 1.25rem;
+    color: var(--text-primary);
+    margin: 0 0 1rem 0;
+}
+
+.members-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.member-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    transition: all 0.2s;
+}
+
+.member-card.host {
+    border-color: var(--warning);
+    background: rgba(255, 193, 7, 0.1);
+}
+
+.member-card.empty {
+    opacity: 0.5;
+    border-style: dashed;
+}
+
+.member-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: white;
+}
+
+.member-avatar.empty {
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+}
+
+.member-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.member-name {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.host-badge {
+    font-size: 0.75rem;
+    color: var(--warning);
+}
+
+.ready-status {
+    font-size: 1.5rem;
+    opacity: 0.3;
+}
+
+.ready-status.ready {
+    opacity: 1;
+}
+
+/* Game Settings */
+.game-settings {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+    height: fit-content;
+}
+
+.settings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+}
+
+.setting-label {
+    color: var(--text-muted);
+}
+
+.setting-value {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Actions */
+.room-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.room-actions .btn-lg {
+    padding: 1rem 3rem;
+    font-size: 1.1rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .room-detail-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .room-content {
+        grid-template-columns: 1fr;
+    }
+
+    .members-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .room-actions {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .room-actions .btn {
+        width: 100%;
+    }
+}
