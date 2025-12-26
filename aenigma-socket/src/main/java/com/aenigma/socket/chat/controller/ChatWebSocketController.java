@@ -10,6 +10,7 @@ import com.aenigma.domain.game.repository.GamePlayerRepository;
 import com.aenigma.domain.game.repository.GameRepository;
 import com.aenigma.socket.chat.dto.ChatRequest;
 import com.aenigma.socket.chat.dto.ChatResponse;
+import com.aenigma.socket.discord.service.DiscordChatSyncService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Controller;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -27,6 +29,7 @@ import java.util.UUID;
  * /sub/chat/room/{gameId}를 구독하여 메시지를 수신합니다.
  * 
  * ChatService를 통해 메시지를 저장하고, WebSocket을 통해 브로드캐스트합니다.
+ * Discord 동기화 서비스를 통해 Discord로도 메시지를 전송합니다.
  */
 @Slf4j
 @Controller
@@ -37,6 +40,7 @@ public class ChatWebSocketController {
         private final ChatService chatService;
         private final GameRepository gameRepository;
         private final GamePlayerRepository gamePlayerRepository;
+        private final Optional<DiscordChatSyncService> discordChatSyncService;
 
         /**
          * 채팅 메시지 처리
@@ -79,6 +83,11 @@ public class ChatWebSocketController {
                 ChatResponse response = buildResponse(chatMessage, sender);
                 String destination = "/sub/chat/room/" + game.getId();
                 messagingTemplate.convertAndSend(destination, response);
+
+                // Discord로도 전송
+                discordChatSyncService.ifPresent(
+                                service -> service.sendToDiscord(game.getId(), sender.getUser().getNickname(),
+                                                request.getContent(), MessageType.PUBLIC));
 
                 log.debug("공개 메시지 브로드캐스트: destination={}", destination);
         }
