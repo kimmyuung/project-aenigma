@@ -14,8 +14,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
         "com.aenigma.api",
         "com.aenigma.domain"
 })
-@EntityScan("com.aenigma.domain.entity")
-@EnableJpaRepositories("com.aenigma.domain.repository")
+@EntityScan(basePackages = "com.aenigma.domain")
+@EnableJpaRepositories(basePackages = "com.aenigma.domain")
 @EnableJpaAuditing
 @ConfigurationPropertiesScan
 public class AenigmaApiApplication {

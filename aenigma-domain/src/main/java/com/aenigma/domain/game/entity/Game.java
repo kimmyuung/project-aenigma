@@ -58,6 +58,20 @@ public class Game extends BaseTimeEntity {
     private Integer dayCount = 0;
 
     /**
+     * 현재 조사 라운드 (1~3)
+     */
+    @Column(name = "investigation_round", nullable = false)
+    @Builder.Default
+    private Integer investigationRound = 1;
+
+    /**
+     * 최대 조사 라운드 수 (GM 설정, 1~3)
+     */
+    @Column(name = "max_investigation_rounds", nullable = false)
+    @Builder.Default
+    private Integer maxInvestigationRounds = 2;
+
+    /**
      * 게임 시작 시간
      */
     @Column(name = "started_at")
@@ -84,18 +98,29 @@ public class Game extends BaseTimeEntity {
         if (this.phase != GamePhase.INTRO) {
             throw new IllegalStateException("게임은 INTRO 단계에서만 시작할 수 있습니다.");
         }
-        this.phase = GamePhase.INVESTIGATION;
+        this.phase = GamePhase.LOBBY;
         this.startedAt = LocalDateTime.now();
         this.dayCount = 1;
+        this.investigationRound = 1;
     }
 
     public void nextPhase() {
         switch (this.phase) {
             case INTRO:
+                this.phase = GamePhase.LOBBY;
+                break;
+            case LOBBY:
                 this.phase = GamePhase.INVESTIGATION;
+                this.investigationRound = 1;
                 break;
             case INVESTIGATION:
-                this.phase = GamePhase.FINAL_VOTE;
+                // 조사 라운드가 남았으면 다음 라운드, 아니면 투표로
+                if (this.investigationRound < this.maxInvestigationRounds) {
+                    this.investigationRound++;
+                    // 페이즈는 그대로 INVESTIGATION 유지
+                } else {
+                    this.phase = GamePhase.FINAL_VOTE;
+                }
                 break;
             case FINAL_VOTE:
                 this.phase = GamePhase.CONCLUSION;
@@ -106,6 +131,23 @@ public class Game extends BaseTimeEntity {
             case FINISHED:
                 throw new IllegalStateException("이미 종료된 게임입니다.");
         }
+    }
+
+    /**
+     * 현재 조사 라운드 정보 반환 (예: "2/3")
+     */
+    public String getInvestigationRoundInfo() {
+        return this.investigationRound + "/" + this.maxInvestigationRounds;
+    }
+
+    /**
+     * 최대 조사 라운드 수 설정 (1~3)
+     */
+    public void setMaxInvestigationRounds(int rounds) {
+        if (rounds < 1 || rounds > 3) {
+            throw new IllegalArgumentException("조사 라운드는 1~3 사이여야 합니다.");
+        }
+        this.maxInvestigationRounds = rounds;
     }
 
     public void finishGame(GameRole winnerTeam) {

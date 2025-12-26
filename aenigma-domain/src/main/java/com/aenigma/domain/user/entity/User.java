@@ -74,6 +74,12 @@ public class User extends BaseTimeEntity {
     @Builder.Default
     private Boolean isActive = true;
 
+    /**
+     * Discord 사용자 ID (연동 시 설정)
+     */
+    @Column(name = "discord_id", length = 30)
+    private String discordId;
+
     // === Business Methods ===
 
     /**

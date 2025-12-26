@@ -2,8 +2,17 @@ package com.aenigma.socket;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {
+        "com.aenigma.socket",
+        "com.aenigma.domain"
+})
+@EntityScan(basePackages = "com.aenigma.domain")
+@EnableJpaRepositories(basePackages = "com.aenigma.domain")
+@EnableJpaAuditing
 public class AenigmaSocketApplication {
 
     public static void main(String[] args) {
