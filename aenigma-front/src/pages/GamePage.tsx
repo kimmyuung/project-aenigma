@@ -254,13 +254,29 @@ export function GamePage() {
                 <aside className="clues-panel">
                     <h3>📋 단서</h3>
                     <div className="clues-list">
-                        <div className="clue-item private">
-                            <span className="clue-type">개인 단서</span>
-                            <p>당신만 아는 비밀 정보입니다.</p>
+                        <div className="clue-card private">
+                            <span className="clue-icon">🔐</span>
+                            <span className="clue-type">🎭 개인 단서</span>
+                            <div className="clue-title">비밀 정보</div>
+                            <p className="clue-description">
+                                당신만 아는 비밀 정보입니다. 다른 플레이어에게 공개할지 여부는 신중히 결정하세요.
+                            </p>
                         </div>
-                        <div className="clue-item public">
-                            <span className="clue-type">공개 단서</span>
-                            <p>사건 현장에서 발견된 증거입니다.</p>
+                        <div className="clue-card public discovered">
+                            <span className="clue-icon">✅</span>
+                            <span className="clue-type">🔍 공개 단서</span>
+                            <div className="clue-title">사건 현장 증거</div>
+                            <p className="clue-description">
+                                사건 현장에서 발견된 증거입니다. 모든 참가자가 확인할 수 있습니다.
+                            </p>
+                        </div>
+                        <div className="clue-card secret locked">
+                            <span className="clue-icon">❓</span>
+                            <span className="clue-type">🔒 미발견</span>
+                            <div className="clue-title">???</div>
+                            <p className="clue-description">
+                                아직 발견되지 않은 단서입니다.
+                            </p>
                         </div>
                     </div>
                 </aside>
