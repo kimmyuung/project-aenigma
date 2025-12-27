@@ -66,6 +66,22 @@ public class VoteService {
     }
 
     /**
+     * 간소화된 투표 메서드 (API 컨트롤러용)
+     * 현재 조사 라운드로 FINAL 투표를 생성합니다.
+     */
+    @Transactional
+    public Vote vote(UUID gameId, UUID userId, UUID targetPlayerId) {
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new IllegalArgumentException("게임을 찾을 수 없습니다."));
+
+        // userId로부터 해당 게임의 플레이어 찾기
+        GamePlayer voter = gamePlayerRepository.findByGameIdAndUserId(gameId, userId)
+                .orElseThrow(() -> new IllegalArgumentException("이 게임의 플레이어가 아닙니다."));
+
+        return castVote(gameId, voter.getId(), targetPlayerId, VoteType.FINAL_VOTE, game.getInvestigationRound());
+    }
+
+    /**
      * 투표 결과 집계
      * 
      * @return Map<플레이어ID, 득표수>
@@ -131,5 +147,12 @@ public class VoteService {
      */
     public List<Vote> getPlayerVoteHistory(UUID gameId, UUID playerId) {
         return voteRepository.findByGameIdAndVoterIdOrderByRoundAsc(gameId, playerId);
+    }
+
+    /**
+     * 라운드별 모든 투표 상세 조회 (GM 전용)
+     */
+    public List<Vote> getAllVotesByRound(UUID gameId, int round) {
+        return voteRepository.findByGameIdAndRound(gameId, round);
     }
 }

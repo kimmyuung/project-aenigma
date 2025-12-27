@@ -171,9 +171,35 @@ export interface Game {
     finishedAt?: string;
 }
 
+export interface Clue {
+    id: string;
+    title: string;
+    content: string;
+    clueType: 'PUBLIC' | 'PERSONAL' | 'HIDDEN';
+    revealRound?: number;
+    importance: number;
+    imageUrl?: string;
+    isDiscovered: boolean;
+    discoveredByNickname?: string;
+}
+
+export interface RoleDetail {
+    playerId: string;
+    nickname: string;
+    displayTag: string;
+    roleType: string;
+    roleName?: string;
+    description?: string;
+    secretInfo?: string;
+    objective?: string;
+    isAlive: boolean;
+}
+
 export const gameApi = {
-    create: (roomId: string) =>
-        api.post<Game>('/api/games', null, { params: { roomId } }),
+    create: (roomId: string, scenarioId?: string) =>
+        api.post<Game>('/api/games', null, {
+            params: { roomId, scenarioId }
+        }),
 
     get: (gameId: string) =>
         api.get<Game>(`/api/games/${gameId}`),
@@ -192,6 +218,19 @@ export const gameApi = {
 
     getStats: () =>
         api.get<Record<string, unknown>>('/api/games/stats'),
+
+    // 새로 추가된 API
+    getClues: (gameId: string) =>
+        api.get<Clue[]>(`/api/games/${gameId}/clues`),
+
+    getMyRole: (gameId: string) =>
+        api.get<RoleDetail>(`/api/games/${gameId}/my-role`),
+
+    vote: (gameId: string, targetPlayerId: string) =>
+        api.post<{ success: boolean; message: string }>(`/api/games/${gameId}/vote`, {
+            targetPlayerId
+        }),
 };
 
 export default api;
+

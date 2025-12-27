@@ -12,7 +12,7 @@ import com.aenigma.socket.chat.dto.ChatResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.User as DiscordUser;
+// Note: Use fully qualified name net.dv8tion.jda.api.entities.User to avoid conflict with domain User
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -89,7 +89,7 @@ public class DiscordChatSyncService extends ListenerAdapter {
 
         Message message = event.getMessage();
         String content = message.getContentDisplay();
-        DiscordUser author = event.getAuthor();
+        net.dv8tion.jda.api.entities.User author = event.getAuthor();
 
         // DM 메시지 처리 (밀담)
         if (event.isFromType(ChannelType.PRIVATE)) {
@@ -106,7 +106,7 @@ public class DiscordChatSyncService extends ListenerAdapter {
     /**
      * Discord 공개 채널 메시지 -> 웹 공개 채팅
      */
-    private void handleChannelMessage(TextChannel channel, DiscordUser author, String content) {
+    private void handleChannelMessage(TextChannel channel, net.dv8tion.jda.api.entities.User author, String content) {
         String channelId = channel.getId();
         UUID gameId = channelGameMap.get(channelId);
 
@@ -126,11 +126,11 @@ public class DiscordChatSyncService extends ListenerAdapter {
         // 메시지 저장 및 웹으로 브로드캐스트
         try {
             ChatMessage chatMessage = chatService.sendPublicMessage(gameId, userId, content);
-            
+
             // WebSocket으로 전송
             ChatResponse response = buildChatResponse(chatMessage, author.getName());
             messagingTemplate.convertAndSend("/topic/game/" + gameId, response);
-            
+
             log.debug("Discord -> 웹 공개 채팅: gameId={}, user={}", gameId, author.getName());
         } catch (Exception e) {
             log.error("Discord 메시지 처리 실패", e);
@@ -142,7 +142,7 @@ public class DiscordChatSyncService extends ListenerAdapter {
      * 
      * DM 형식: "@닉네임 메시지내용" 또는 그냥 메시지
      */
-    private void handlePrivateMessage(DiscordUser author, String content, Message message) {
+    private void handlePrivateMessage(net.dv8tion.jda.api.entities.User author, String content, Message message) {
         UUID senderId = discordUserMap.get(author.getId());
         if (senderId == null) {
             author.openPrivateChannel().queue(channel -> {
@@ -153,29 +153,29 @@ public class DiscordChatSyncService extends ListenerAdapter {
 
         // @멘션으로 수신자 파악
         if (!message.getMentions().getUsers().isEmpty()) {
-            DiscordUser receiver = message.getMentions().getUsers().get(0);
+            net.dv8tion.jda.api.entities.User receiver = message.getMentions().getUsers().get(0);
             UUID receiverId = discordUserMap.get(receiver.getId());
-            
+
             if (receiverId != null) {
                 // 멘션 제거한 실제 메시지
                 String actualContent = content.replaceAll("@\\S+\\s*", "").trim();
-                
+
                 // 발신자의 게임 찾기
                 findUserGame(senderId).ifPresent(gameId -> {
                     try {
-                        ChatMessage chatMessage = chatService.sendWhisperMessage(
+                        ChatMessage chatMessage = chatService.sendWhisper(
                                 gameId, senderId, receiverId, actualContent);
-                        
+
                         // 수신자에게 WebSocket 전송
                         ChatResponse response = buildChatResponse(chatMessage, author.getName());
                         messagingTemplate.convertAndSendToUser(
                                 receiverId.toString(), "/queue/whisper", response);
-                        
+
                         // Discord DM으로도 수신자에게 전달
                         receiver.openPrivateChannel().queue(channel -> {
                             channel.sendMessage("💬 [" + author.getName() + "]: " + actualContent).queue();
                         });
-                        
+
                         log.debug("Discord DM -> 웹 밀담: {} -> {}", author.getName(), receiver.getName());
                     } catch (Exception e) {
                         log.error("Discord DM 처리 실패", e);
@@ -225,7 +225,7 @@ public class DiscordChatSyncService extends ListenerAdapter {
                 .type(MessageType.SYSTEM)
                 .timestamp(LocalDateTime.now())
                 .build();
-        
+
         messagingTemplate.convertAndSend("/topic/game/" + gameId + "/system", response);
     }
 
@@ -243,7 +243,7 @@ public class DiscordChatSyncService extends ListenerAdapter {
                 .messageId(message.getId())
                 .gameId(message.getGame().getId())
                 .sender(ChatResponse.SenderInfo.builder()
-                        .userId(message.getSender().getId())
+                        .playerId(message.getSender().getId())
                         .nickname(senderName)
                         .build())
                 .content(message.getContent())

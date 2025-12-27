@@ -1,13 +1,19 @@
 package com.aenigma.api.game.controller;
 
+import com.aenigma.api.game.dto.ClueResponse;
 import com.aenigma.api.game.dto.GameResponse;
+import com.aenigma.api.game.dto.RoleDetailResponse;
+import com.aenigma.api.game.dto.VoteRequest;
 import com.aenigma.domain.game.entity.Game;
+import com.aenigma.domain.game.entity.GameClue;
 import com.aenigma.domain.game.entity.GamePlayer;
 import com.aenigma.domain.game.service.GameService;
 import com.aenigma.domain.room.entity.Room;
 import com.aenigma.domain.room.service.RoomService;
+import com.aenigma.domain.vote.service.VoteService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,15 +34,17 @@ public class GameController {
 
     private final GameService gameService;
     private final RoomService roomService;
+    private final VoteService voteService;
 
     /**
      * 게임 생성 및 역할 배정
      */
-    @Operation(summary = "게임 생성", description = "방에서 새 게임을 생성하고 역할을 배정합니다.")
+    @Operation(summary = "게임 생성", description = "방에서 새 게임을 생성하고 역할을 배정합니다. 시나리오 ID가 있으면 시나리오 기반으로 생성됩니다.")
     @PostMapping
     public ResponseEntity<GameResponse> createGame(
             @RequestHeader("X-User-Id") UUID userId,
-            @RequestParam UUID roomId) {
+            @RequestParam UUID roomId,
+            @RequestParam(required = false) UUID scenarioId) {
 
         Room room = roomService.findById(roomId)
                 .orElseThrow(() -> new IllegalArgumentException("방을 찾을 수 없습니다."));
@@ -46,11 +54,16 @@ public class GameController {
             throw new IllegalStateException("방장만 게임을 생성할 수 있습니다.");
         }
 
-        // 게임 생성
-        Game game = gameService.createGame(room);
-
-        // 역할 배정
-        List<GamePlayer> players = gameService.assignRoles(game, room.getMembers());
+        Game game;
+        if (scenarioId != null) {
+            // 시나리오 기반 게임 생성
+            game = gameService.createGameFromScenario(room, scenarioId);
+            gameService.assignRolesFromScenario(game, room.getMembers());
+        } else {
+            // 일반 게임 생성
+            game = gameService.createGame(room);
+            gameService.assignRoles(game, room.getMembers());
+        }
 
         return ResponseEntity.status(HttpStatus.CREATED).body(GameResponse.from(game, userId));
     }
@@ -112,6 +125,53 @@ public class GameController {
                 .orElseThrow(() -> new IllegalArgumentException("게임을 찾을 수 없습니다."));
 
         return ResponseEntity.ok(GameResponse.from(game, userId));
+    }
+
+    /**
+     * 내 단서 목록 조회
+     */
+    @Operation(summary = "내 단서 조회", description = "내가 볼 수 있는 단서 목록을 조회합니다.")
+    @GetMapping("/{gameId}/clues")
+    public ResponseEntity<List<ClueResponse>> getMyClues(
+            @RequestHeader("X-User-Id") UUID userId,
+            @PathVariable UUID gameId) {
+
+        List<GameClue> clues = gameService.getVisibleClues(gameId, userId);
+        List<ClueResponse> response = clues.stream()
+                .map(ClueResponse::from)
+                .toList();
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 내 역할 상세 정보 조회
+     */
+    @Operation(summary = "내 역할 조회", description = "내 역할 상세 정보를 조회합니다.")
+    @GetMapping("/{gameId}/my-role")
+    public ResponseEntity<RoleDetailResponse> getMyRole(
+            @RequestHeader("X-User-Id") UUID userId,
+            @PathVariable UUID gameId) {
+
+        GamePlayer player = gameService.getPlayerRole(gameId, userId);
+        return ResponseEntity.ok(RoleDetailResponse.from(player));
+    }
+
+    /**
+     * 투표 제출
+     */
+    @Operation(summary = "투표", description = "최종 투표에서 범인을 지목합니다.")
+    @PostMapping("/{gameId}/vote")
+    public ResponseEntity<Map<String, Object>> vote(
+            @RequestHeader("X-User-Id") UUID userId,
+            @PathVariable UUID gameId,
+            @Valid @RequestBody VoteRequest request) {
+
+        voteService.vote(gameId, userId, request.getTargetPlayerId());
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "투표가 완료되었습니다."));
     }
 
     /**

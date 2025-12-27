@@ -3,9 +3,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     runtimeOnly("org.mariadb.jdbc:mariadb-java-client")
 
-    // WebSocket (STOMP)
+    // WebSocket (STOMP) - spring-messaging이 이미 포함됨
     implementation("org.springframework.boot:spring-boot-starter-websocket")
-    implementation("org.springframework:spring-messaging")
     
     // Security (JWT 인증용)
     implementation("org.springframework.boot:spring-boot-starter-security")

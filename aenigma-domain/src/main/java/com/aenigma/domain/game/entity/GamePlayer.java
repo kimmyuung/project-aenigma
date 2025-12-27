@@ -54,6 +54,32 @@ public class GamePlayer extends BaseTimeEntity {
     @Builder.Default
     private Boolean isAlive = true;
 
+    // === 시나리오 역할 정보 (시나리오 기반 게임용) ===
+
+    /**
+     * 시나리오 역할 이름 (예: "레이디 엘리자베스")
+     */
+    @Column(name = "scenario_role_name", length = 100)
+    private String scenarioRoleName;
+
+    /**
+     * 시나리오 역할 설명 (공개 정보)
+     */
+    @Column(name = "scenario_role_description", columnDefinition = "TEXT")
+    private String scenarioRoleDescription;
+
+    /**
+     * 시나리오 역할 비밀 정보 (본인만 열람)
+     */
+    @Column(name = "scenario_role_secret", columnDefinition = "TEXT")
+    private String scenarioRoleSecret;
+
+    /**
+     * 시나리오 역할 목표
+     */
+    @Column(name = "scenario_role_objective", columnDefinition = "TEXT")
+    private String scenarioRoleObjective;
+
     // --- Actions ---
 
     public static GamePlayer create(Game game, User user, GameRole role) {

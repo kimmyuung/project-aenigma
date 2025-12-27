@@ -2,6 +2,7 @@ package com.aenigma.domain.game.entity;
 
 import com.aenigma.domain.common.entity.BaseTimeEntity;
 import com.aenigma.domain.room.entity.Room;
+import com.aenigma.domain.scenario.entity.Scenario;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -93,6 +94,20 @@ public class Game extends BaseTimeEntity {
     @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<GamePlayer> players = new ArrayList<>();
+
+    /**
+     * 게임에 사용된 시나리오 (선택적)
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "scenario_id")
+    private Scenario scenario;
+
+    /**
+     * 게임 내 단서 목록
+     */
+    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<GameClue> clues = new ArrayList<>();
 
     public void start() {
         if (this.phase != GamePhase.INTRO) {
