@@ -678,3 +678,160 @@
     color: var(--text-muted);
     font-style: italic;
 }
+
+/* Game Result Section */
+.result-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1rem;
+    animation: fadeIn 0.5s ease;
+}
+
+.result-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.result-icon {
+    font-size: 3rem;
+    animation: bounce 1s infinite;
+}
+
+@keyframes bounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.result-header h2 {
+    font-size: 2rem;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.result-card {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05));
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    border-radius: 16px;
+    padding: 2rem;
+    text-align: center;
+}
+
+.result-card.winner h3 {
+    font-size: 1.5rem;
+    color: #22c55e;
+    margin-bottom: 0.5rem;
+}
+
+.result-card.loser {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.05));
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.result-card.loser h3 {
+    color: #ef4444;
+}
+
+.result-card p {
+    color: var(--text-secondary);
+}
+
+.roles-reveal {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.roles-reveal h3 {
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+.roles-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.role-reveal-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 8px;
+}
+
+.role-reveal-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.role-reveal-info .player-name {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.role-reveal-info .player-role {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.eliminated-badge {
+    font-size: 1.25rem;
+}
+
+.game-stats {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.game-stats h3 {
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.stat-item {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+}
+
+.stat-label {
+    display: block;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin-bottom: 0.25rem;
+}
+
+.stat-value {
+    display: block;
+    color: var(--accent);
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.result-actions {
+    display: flex;
+    justify-content: center;
+    padding: 1rem 0;
+}

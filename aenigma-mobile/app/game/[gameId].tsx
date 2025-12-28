@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { useLocalSearchParams, router } from 'expo-router';
-import { gameApi, Game, Clue, RoleDetail, AlibiEntry } from '../../services/api';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Alert, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
+import { gameApi, Game, Clue, RoleDetail, AlibiEntry, tokenStorage } from '../../services/api';
+import { useWebSocket, ChatMessage } from '../../services/useWebSocket';
 
 export default function GameScreen() {
     const { gameId } = useLocalSearchParams<{ gameId: string }>();
@@ -9,13 +10,44 @@ export default function GameScreen() {
     const [clues, setClues] = useState<Clue[]>([]);
     const [roleDetail, setRoleDetail] = useState<RoleDetail | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [selectedTab, setSelectedTab] = useState<'role' | 'clues' | 'players'>('role');
+    const [selectedTab, setSelectedTab] = useState<'role' | 'clues' | 'chat' | 'players'>('role');
+    const [userId, setUserId] = useState<string>('');
+
+    // 채팅 상태
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [newMessage, setNewMessage] = useState('');
+    const scrollViewRef = useRef<ScrollView>(null);
+
+    // WebSocket 메시지 핸들러
+    const handleWebSocketMessage = useCallback((message: ChatMessage) => {
+        setMessages(prev => [...prev, message]);
+    }, []);
+
+    // WebSocket 연결
+    const { isConnected, sendPublicMessage } = useWebSocket({
+        gameId: gameId || '',
+        userId: userId,
+        onMessage: handleWebSocketMessage,
+    });
+
+    useEffect(() => {
+        const loadUserId = async () => {
+            const id = await tokenStorage.getUserId();
+            if (id) setUserId(id);
+        };
+        loadUserId();
+    }, []);
 
     useEffect(() => {
         if (gameId) {
             loadGameData();
         }
     }, [gameId]);
+
+    useEffect(() => {
+        // 새 메시지 시 스크롤
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, [messages]);
 
     const loadGameData = async () => {
         try {
@@ -28,12 +60,43 @@ export default function GameScreen() {
             setGame(gameRes.data);
             setClues(cluesRes.data);
             setRoleDetail(roleRes.data);
+
+            // 시스템 메시지 추가
+            setMessages([{
+                id: 'sys-1',
+                gameId: gameId!,
+                senderId: 'system',
+                senderNickname: '시스템',
+                content: '게임에 입장했습니다. 역할을 확인하세요.',
+                type: 'SYSTEM',
+                timestamp: new Date().toISOString(),
+            }]);
         } catch (error) {
             console.error('게임 데이터 로드 실패', error);
             Alert.alert('오류', '게임 정보를 불러올 수 없습니다.');
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleSendMessage = () => {
+        if (!newMessage.trim()) return;
+
+        const sent = sendPublicMessage(newMessage);
+        if (sent) {
+            // 낙관적 UI 업데이트
+            const message: ChatMessage = {
+                id: `temp-${Date.now()}`,
+                gameId: gameId!,
+                senderId: userId,
+                senderNickname: roleDetail?.nickname || '나',
+                content: newMessage,
+                type: 'PUBLIC',
+                timestamp: new Date().toISOString(),
+            };
+            setMessages(prev => [...prev, message]);
+        }
+        setNewMessage('');
     };
 
     const getRoleEmoji = (role?: string) => {
@@ -75,7 +138,11 @@ export default function GameScreen() {
     }
 
     return (
-        <View style={styles.container}>
+        <KeyboardAvoidingView
+            style={styles.container}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={90}
+        >
             {/* Game Header */}
             <View style={styles.header}>
                 <View style={styles.phaseInfo}>
@@ -85,140 +152,175 @@ export default function GameScreen() {
                             라운드 {game.investigationRound} / {game.maxInvestigationRounds}
                         </Text>
                     )}
+                    <View style={[styles.wsStatus, { backgroundColor: isConnected ? '#22c55e' : '#ef4444' }]} />
                 </View>
             </View>
 
             {/* Tab Navigation */}
             <View style={styles.tabs}>
-                <TouchableOpacity
-                    style={[styles.tab, selectedTab === 'role' && styles.tabActive]}
-                    onPress={() => setSelectedTab('role')}
-                >
-                    <Text style={[styles.tabText, selectedTab === 'role' && styles.tabTextActive]}>
-                        🎭 내 역할
-                    </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.tab, selectedTab === 'clues' && styles.tabActive]}
-                    onPress={() => setSelectedTab('clues')}
-                >
-                    <Text style={[styles.tabText, selectedTab === 'clues' && styles.tabTextActive]}>
-                        📋 단서
-                    </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.tab, selectedTab === 'players' && styles.tabActive]}
-                    onPress={() => setSelectedTab('players')}
-                >
-                    <Text style={[styles.tabText, selectedTab === 'players' && styles.tabTextActive]}>
-                        👥 참가자
-                    </Text>
-                </TouchableOpacity>
+                {['role', 'clues', 'chat', 'players'].map((tab) => (
+                    <TouchableOpacity
+                        key={tab}
+                        style={[styles.tab, selectedTab === tab && styles.tabActive]}
+                        onPress={() => setSelectedTab(tab as typeof selectedTab)}
+                    >
+                        <Text style={[styles.tabText, selectedTab === tab && styles.tabTextActive]}>
+                            {tab === 'role' ? '🎭' : tab === 'clues' ? '📋' : tab === 'chat' ? '💬' : '👥'}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
             </View>
 
             {/* Tab Content */}
-            <ScrollView style={styles.content}>
-                {selectedTab === 'role' && roleDetail && (
-                    <View style={styles.roleSection}>
-                        <View style={styles.roleCard}>
-                            <Text style={styles.roleEmoji}>{getRoleEmoji(roleDetail.roleType)}</Text>
-                            <Text style={styles.roleName}>{roleDetail.roleName || roleDetail.roleType}</Text>
-                        </View>
-
-                        {roleDetail.objective && (
-                            <View style={styles.infoCard}>
-                                <Text style={styles.infoTitle}>🎯 목표</Text>
-                                <Text style={styles.infoText}>{roleDetail.objective}</Text>
-                            </View>
-                        )}
-
-                        {roleDetail.description && (
-                            <View style={styles.infoCard}>
-                                <Text style={styles.infoTitle}>📖 설명</Text>
-                                <Text style={styles.infoText}>{roleDetail.description}</Text>
-                            </View>
-                        )}
-
-                        {roleDetail.secretInfo && (
-                            <View style={[styles.infoCard, styles.secretCard]}>
-                                <Text style={styles.infoTitle}>🔐 비밀 정보</Text>
-                                <Text style={styles.infoText}>{roleDetail.secretInfo}</Text>
-                            </View>
-                        )}
-
-                        {roleDetail.alibi && (
-                            <View style={[styles.infoCard, styles.alibiCard]}>
-                                <Text style={styles.infoTitle}>📅 사건 당일 알리바이</Text>
-                                {parseAlibi(roleDetail.alibi).map((entry, idx) => (
-                                    <View key={idx} style={styles.alibiEntry}>
-                                        <Text style={styles.alibiTime}>{entry.time}</Text>
-                                        <View>
-                                            <Text style={styles.alibiLocation}>📍 {entry.location}</Text>
-                                            <Text style={styles.alibiActivity}>{entry.activity}</Text>
-                                            {entry.witnesses && entry.witnesses.length > 0 && (
-                                                <Text style={styles.alibiWitnesses}>
-                                                    👁️ 목격자: {entry.witnesses.join(', ')}
-                                                </Text>
-                                            )}
-                                        </View>
-                                    </View>
-                                ))}
-                            </View>
-                        )}
-                    </View>
-                )}
-
-                {selectedTab === 'clues' && (
-                    <View style={styles.cluesSection}>
-                        {clues.length > 0 ? clues.map((clue) => (
+            {selectedTab === 'chat' ? (
+                <View style={styles.chatContainer}>
+                    <ScrollView
+                        ref={scrollViewRef}
+                        style={styles.chatMessages}
+                        contentContainerStyle={styles.chatMessagesContent}
+                    >
+                        {messages.map((msg) => (
                             <View
-                                key={clue.id}
-                                style={[styles.clueCard, !clue.isDiscovered && styles.clueLocked]}
+                                key={msg.id}
+                                style={[
+                                    styles.messageItem,
+                                    msg.type === 'SYSTEM' && styles.systemMessage,
+                                    msg.senderId === userId && styles.myMessage,
+                                ]}
                             >
-                                <View style={styles.clueHeader}>
-                                    <Text style={styles.clueType}>
-                                        {clue.clueType === 'PUBLIC' ? '🔍 공개' : clue.clueType === 'PERSONAL' ? '🎭 개인' : '🔒 비밀'}
-                                    </Text>
-                                    <Text style={styles.clueStatus}>
-                                        {clue.isDiscovered ? '✅' : '🔒'}
-                                    </Text>
-                                </View>
-                                <Text style={styles.clueTitle}>
-                                    {clue.isDiscovered ? clue.title : '???'}
+                                {msg.type !== 'SYSTEM' && (
+                                    <Text style={styles.messageSender}>{msg.senderNickname}</Text>
+                                )}
+                                <Text style={[
+                                    styles.messageContent,
+                                    msg.type === 'SYSTEM' && styles.systemMessageText,
+                                    msg.senderId === userId && styles.myMessageText,
+                                ]}>
+                                    {msg.content}
                                 </Text>
-                                <Text style={styles.clueContent}>
-                                    {clue.isDiscovered ? clue.content : '아직 발견되지 않은 단서입니다.'}
-                                </Text>
-                            </View>
-                        )) : (
-                            <Text style={styles.emptyText}>아직 단서가 없습니다.</Text>
-                        )}
-                    </View>
-                )}
-
-                {selectedTab === 'players' && (
-                    <View style={styles.playersSection}>
-                        {game.players.map((player) => (
-                            <View
-                                key={player.id}
-                                style={[styles.playerCard, !player.isAlive && styles.playerDead]}
-                            >
-                                <View style={styles.playerAvatar}>
-                                    <Text style={styles.playerAvatarText}>
-                                        {player.nickname[0].toUpperCase()}
-                                    </Text>
-                                </View>
-                                <View style={styles.playerInfo}>
-                                    <Text style={styles.playerName}>{player.nickname}</Text>
-                                    <Text style={styles.playerTag}>{player.displayTag}</Text>
-                                </View>
-                                {!player.isAlive && <Text style={styles.deadBadge}>💀</Text>}
                             </View>
                         ))}
+                    </ScrollView>
+
+                    <View style={styles.chatInputContainer}>
+                        <TextInput
+                            style={styles.chatInput}
+                            placeholder="메시지 입력..."
+                            placeholderTextColor="#64748b"
+                            value={newMessage}
+                            onChangeText={setNewMessage}
+                            onSubmitEditing={handleSendMessage}
+                            returnKeyType="send"
+                        />
+                        <TouchableOpacity style={styles.sendButton} onPress={handleSendMessage}>
+                            <Text style={styles.sendButtonText}>전송</Text>
+                        </TouchableOpacity>
                     </View>
-                )}
-            </ScrollView>
-        </View>
+                </View>
+            ) : (
+                <ScrollView style={styles.content}>
+                    {selectedTab === 'role' && roleDetail && (
+                        <View style={styles.roleSection}>
+                            <View style={styles.roleCard}>
+                                <Text style={styles.roleEmoji}>{getRoleEmoji(roleDetail.roleType)}</Text>
+                                <Text style={styles.roleName}>{roleDetail.roleName || roleDetail.roleType}</Text>
+                            </View>
+
+                            {roleDetail.objective && (
+                                <View style={styles.infoCard}>
+                                    <Text style={styles.infoTitle}>🎯 목표</Text>
+                                    <Text style={styles.infoText}>{roleDetail.objective}</Text>
+                                </View>
+                            )}
+
+                            {roleDetail.description && (
+                                <View style={styles.infoCard}>
+                                    <Text style={styles.infoTitle}>📖 설명</Text>
+                                    <Text style={styles.infoText}>{roleDetail.description}</Text>
+                                </View>
+                            )}
+
+                            {roleDetail.secretInfo && (
+                                <View style={[styles.infoCard, styles.secretCard]}>
+                                    <Text style={styles.infoTitle}>🔐 비밀 정보</Text>
+                                    <Text style={styles.infoText}>{roleDetail.secretInfo}</Text>
+                                </View>
+                            )}
+
+                            {roleDetail.alibi && (
+                                <View style={[styles.infoCard, styles.alibiCard]}>
+                                    <Text style={styles.infoTitle}>📅 사건 당일 알리바이</Text>
+                                    {parseAlibi(roleDetail.alibi).map((entry, idx) => (
+                                        <View key={idx} style={styles.alibiEntry}>
+                                            <Text style={styles.alibiTime}>{entry.time}</Text>
+                                            <View>
+                                                <Text style={styles.alibiLocation}>📍 {entry.location}</Text>
+                                                <Text style={styles.alibiActivity}>{entry.activity}</Text>
+                                                {entry.witnesses && entry.witnesses.length > 0 && (
+                                                    <Text style={styles.alibiWitnesses}>
+                                                        👁️ 목격자: {entry.witnesses.join(', ')}
+                                                    </Text>
+                                                )}
+                                            </View>
+                                        </View>
+                                    ))}
+                                </View>
+                            )}
+                        </View>
+                    )}
+
+                    {selectedTab === 'clues' && (
+                        <View style={styles.cluesSection}>
+                            {clues.length > 0 ? clues.map((clue) => (
+                                <View
+                                    key={clue.id}
+                                    style={[styles.clueCard, !clue.isDiscovered && styles.clueLocked]}
+                                >
+                                    <View style={styles.clueHeader}>
+                                        <Text style={styles.clueType}>
+                                            {clue.clueType === 'PUBLIC' ? '🔍 공개' : clue.clueType === 'PERSONAL' ? '🎭 개인' : '🔒 비밀'}
+                                        </Text>
+                                        <Text style={styles.clueStatus}>
+                                            {clue.isDiscovered ? '✅' : '🔒'}
+                                        </Text>
+                                    </View>
+                                    <Text style={styles.clueTitle}>
+                                        {clue.isDiscovered ? clue.title : '???'}
+                                    </Text>
+                                    <Text style={styles.clueContent}>
+                                        {clue.isDiscovered ? clue.content : '아직 발견되지 않은 단서입니다.'}
+                                    </Text>
+                                </View>
+                            )) : (
+                                <Text style={styles.emptyText}>아직 단서가 없습니다.</Text>
+                            )}
+                        </View>
+                    )}
+
+                    {selectedTab === 'players' && (
+                        <View style={styles.playersSection}>
+                            {game.players.map((player) => (
+                                <View
+                                    key={player.id}
+                                    style={[styles.playerCard, !player.isAlive && styles.playerDead]}
+                                >
+                                    <View style={styles.playerAvatar}>
+                                        <Text style={styles.playerAvatarText}>
+                                            {player.nickname[0].toUpperCase()}
+                                        </Text>
+                                    </View>
+                                    <View style={styles.playerInfo}>
+                                        <Text style={styles.playerName}>{player.nickname}</Text>
+                                        <Text style={styles.playerTag}>{player.displayTag}</Text>
+                                    </View>
+                                    {!player.isAlive && <Text style={styles.deadBadge}>💀</Text>}
+                                </View>
+                            ))}
+                        </View>
+                    )}
+                </ScrollView>
+            )}
+        </KeyboardAvoidingView>
     );
 }
 
@@ -254,9 +356,15 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         color: '#fff',
         fontWeight: '600',
+        overflow: 'hidden',
     },
     roundText: {
         color: '#64748b',
+    },
+    wsStatus: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
     },
     tabs: {
         flexDirection: 'row',
@@ -273,17 +381,86 @@ const styles = StyleSheet.create({
         borderBottomColor: '#8a2be2',
     },
     tabText: {
-        color: '#64748b',
-        fontSize: 14,
+        fontSize: 20,
     },
     tabTextActive: {
-        color: '#fff',
-        fontWeight: '600',
+        opacity: 1,
     },
     content: {
         flex: 1,
         padding: 16,
     },
+    // Chat Styles
+    chatContainer: {
+        flex: 1,
+    },
+    chatMessages: {
+        flex: 1,
+    },
+    chatMessagesContent: {
+        padding: 12,
+        gap: 8,
+    },
+    messageItem: {
+        backgroundColor: '#1a1a2e',
+        borderRadius: 12,
+        padding: 10,
+        maxWidth: '80%',
+    },
+    myMessage: {
+        alignSelf: 'flex-end',
+        backgroundColor: '#8a2be2',
+    },
+    systemMessage: {
+        alignSelf: 'center',
+        backgroundColor: 'transparent',
+        maxWidth: '100%',
+    },
+    messageSender: {
+        color: '#64748b',
+        fontSize: 11,
+        marginBottom: 2,
+    },
+    messageContent: {
+        color: '#fff',
+        fontSize: 14,
+    },
+    myMessageText: {
+        color: '#fff',
+    },
+    systemMessageText: {
+        color: '#64748b',
+        fontStyle: 'italic',
+        textAlign: 'center',
+    },
+    chatInputContainer: {
+        flexDirection: 'row',
+        padding: 12,
+        gap: 8,
+        borderTopWidth: 1,
+        borderTopColor: '#1e1e3f',
+        backgroundColor: '#0f0f1e',
+    },
+    chatInput: {
+        flex: 1,
+        backgroundColor: '#1a1a2e',
+        borderRadius: 20,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        color: '#fff',
+        fontSize: 14,
+    },
+    sendButton: {
+        backgroundColor: '#8a2be2',
+        borderRadius: 20,
+        paddingHorizontal: 20,
+        justifyContent: 'center',
+    },
+    sendButtonText: {
+        color: '#fff',
+        fontWeight: '600',
+    },
+    // Role Section
     roleSection: {
         gap: 16,
     },

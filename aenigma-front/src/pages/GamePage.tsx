@@ -316,6 +316,71 @@ export function GamePage() {
                             </div>
                         </div>
                     )}
+
+                    {/* Game Result Section (Conclusion/Finished Phase) */}
+                    {(game.phase === 'CONCLUSION' || game.phase === 'FINISHED') && (
+                        <div className="result-section">
+                            <div className="result-header">
+                                <span className="result-icon">🏆</span>
+                                <h2>게임 결과</h2>
+                            </div>
+
+                            <div className="result-card winner">
+                                <h3>🎉 시민팀 승리!</h3>
+                                <p>범인을 성공적으로 찾아냈습니다.</p>
+                            </div>
+
+                            <div className="roles-reveal">
+                                <h3>📋 역할 공개</h3>
+                                <div className="roles-list">
+                                    {game.players.map((player) => (
+                                        <div key={player.id} className="role-reveal-item">
+                                            <div className="player-avatar">
+                                                {player.nickname.charAt(0).toUpperCase()}
+                                            </div>
+                                            <div className="role-reveal-info">
+                                                <span className="player-name">{player.nickname}</span>
+                                                <span className="player-role">
+                                                    {getRoleEmoji(player.role)} {player.role || '역할 미정'}
+                                                </span>
+                                            </div>
+                                            {!player.isAlive && <span className="eliminated-badge">💀</span>}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="game-stats">
+                                <h3>📊 게임 통계</h3>
+                                <div className="stats-grid">
+                                    <div className="stat-item">
+                                        <span className="stat-label">게임 시간</span>
+                                        <span className="stat-value">15:32</span>
+                                    </div>
+                                    <div className="stat-item">
+                                        <span className="stat-label">총 라운드</span>
+                                        <span className="stat-value">{game.maxRounds}</span>
+                                    </div>
+                                    <div className="stat-item">
+                                        <span className="stat-label">참가자</span>
+                                        <span className="stat-value">{game.players.length}명</span>
+                                    </div>
+                                    <div className="stat-item">
+                                        <span className="stat-label">생존자</span>
+                                        <span className="stat-value">
+                                            {game.players.filter(p => p.isAlive).length}명
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="result-actions">
+                                <button className="btn btn-primary btn-lg" onClick={() => window.location.href = '/rooms'}>
+                                    🎮 새 게임 시작
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </main>
 
                 {/* Clues Panel */}
