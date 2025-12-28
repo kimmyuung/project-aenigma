@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { gameApi, type GamePlayer } from '../api/client';
+import { gameApi, type GamePlayer, type Clue, type RoleDetail } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { useWebSocket, type ChatMessage } from '../hooks/useWebSocket';
 import './GamePage.css';
@@ -29,6 +29,13 @@ export function GamePage() {
     const [votedPlayer, setVotedPlayer] = useState<string | null>(null);
     const [wsStatus, setWsStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
 
+    // 추가된 상태
+    const [clues, setClues] = useState<Clue[]>([]);
+    const [roleDetail, setRoleDetail] = useState<RoleDetail | null>(null);
+    const [showRoleModal, setShowRoleModal] = useState(false);
+    const [isVoting, setIsVoting] = useState(false);
+    const [voteError, setVoteError] = useState<string | null>(null);
+
     // WebSocket 메시지 수신 핸들러
     const handleWebSocketMessage = useCallback((message: ChatMessage) => {
         setMessages(prev => [...prev, message]);
@@ -36,9 +43,7 @@ export function GamePage() {
 
     // WebSocket 연결
     const {
-        isConnected,
         sendPublicMessage,
-        sendWhisper
     } = useWebSocket({
         gameId: gameId || '',
         userId: user?.userId || '',
@@ -50,6 +55,8 @@ export function GamePage() {
     useEffect(() => {
         if (gameId) {
             loadGameState();
+            loadClues();
+            loadMyRole();
         }
     }, [gameId]);
 
@@ -92,6 +99,24 @@ export function GamePage() {
         }
     };
 
+    const loadClues = async () => {
+        try {
+            const response = await gameApi.getClues(gameId!);
+            setClues(response.data);
+        } catch (err) {
+            console.error('단서 로드 실패', err);
+        }
+    };
+
+    const loadMyRole = async () => {
+        try {
+            const response = await gameApi.getMyRole(gameId!);
+            setRoleDetail(response.data);
+        } catch (err) {
+            console.error('역할 로드 실패', err);
+        }
+    };
+
     const handleSendMessage = (e: React.FormEvent) => {
         e.preventDefault();
         if (!newMessage.trim()) return;
@@ -116,10 +141,51 @@ export function GamePage() {
         setNewMessage('');
     };
 
-    const handleVote = () => {
-        if (selectedPlayer) {
-            setVotedPlayer(selectedPlayer);
-            // TODO: 투표 API 호출
+    const handleVote = async () => {
+        if (!selectedPlayer || isVoting || votedPlayer) return;
+
+        try {
+            setIsVoting(true);
+            setVoteError(null);
+
+            const response = await gameApi.vote(gameId!, selectedPlayer);
+
+            if (response.data.success) {
+                setVotedPlayer(selectedPlayer);
+                // 투표 완료 시스템 메시지
+                setMessages(prev => [...prev, {
+                    id: `sys-vote-${Date.now()}`,
+                    gameId: gameId!,
+                    senderId: 'system',
+                    senderNickname: '시스템',
+                    content: '✅ 투표가 완료되었습니다.',
+                    type: 'SYSTEM',
+                    timestamp: new Date().toISOString(),
+                }]);
+            }
+        } catch (err) {
+            console.error('투표 실패', err);
+            setVoteError('투표에 실패했습니다. 다시 시도해주세요.');
+        } finally {
+            setIsVoting(false);
+        }
+    };
+
+    const getClueTypeClass = (clueType: string): string => {
+        switch (clueType) {
+            case 'PUBLIC': return 'public';
+            case 'PERSONAL': return 'private';
+            case 'HIDDEN': return 'secret';
+            default: return '';
+        }
+    };
+
+    const getClueTypeLabel = (clueType: string): string => {
+        switch (clueType) {
+            case 'PUBLIC': return '🔍 공개 단서';
+            case 'PERSONAL': return '🎭 개인 단서';
+            case 'HIDDEN': return '🔒 비밀 단서';
+            default: return '📋 단서';
         }
     };
 
@@ -168,9 +234,10 @@ export function GamePage() {
                         {wsStatus === 'connected' ? '🟢' : wsStatus === 'connecting' ? '🟡' : '🔴'}
                     </span>
                 </div>
-                <div className="my-role">
+                <div className="my-role" onClick={() => setShowRoleModal(true)} style={{ cursor: 'pointer' }}>
                     <span className="role-emoji">{getRoleEmoji(game.myRole)}</span>
                     <span className="role-name">{game.myRole || '역할 미정'}</span>
+                    <span className="role-hint">ℹ️</span>
                 </div>
             </header>
 
@@ -237,13 +304,14 @@ export function GamePage() {
                         <div className="vote-section">
                             <h3>⚖️ 최종 투표</h3>
                             <p>범인이라고 생각하는 사람을 선택하세요.</p>
+                            {voteError && <p className="error-message">{voteError}</p>}
                             <div className="vote-actions">
                                 <button
                                     className="btn btn-primary btn-lg"
                                     onClick={handleVote}
-                                    disabled={!selectedPlayer || !!votedPlayer}
+                                    disabled={!selectedPlayer || !!votedPlayer || isVoting}
                                 >
-                                    {votedPlayer ? '투표 완료' : '투표하기'}
+                                    {isVoting ? '투표 중...' : votedPlayer ? '투표 완료' : '투표하기'}
                                 </button>
                             </div>
                         </div>
@@ -254,33 +322,79 @@ export function GamePage() {
                 <aside className="clues-panel">
                     <h3>📋 단서</h3>
                     <div className="clues-list">
-                        <div className="clue-card private">
-                            <span className="clue-icon">🔐</span>
-                            <span className="clue-type">🎭 개인 단서</span>
-                            <div className="clue-title">비밀 정보</div>
-                            <p className="clue-description">
-                                당신만 아는 비밀 정보입니다. 다른 플레이어에게 공개할지 여부는 신중히 결정하세요.
-                            </p>
-                        </div>
-                        <div className="clue-card public discovered">
-                            <span className="clue-icon">✅</span>
-                            <span className="clue-type">🔍 공개 단서</span>
-                            <div className="clue-title">사건 현장 증거</div>
-                            <p className="clue-description">
-                                사건 현장에서 발견된 증거입니다. 모든 참가자가 확인할 수 있습니다.
-                            </p>
-                        </div>
-                        <div className="clue-card secret locked">
-                            <span className="clue-icon">❓</span>
-                            <span className="clue-type">🔒 미발견</span>
-                            <div className="clue-title">???</div>
-                            <p className="clue-description">
-                                아직 발견되지 않은 단서입니다.
-                            </p>
-                        </div>
+                        {clues.length > 0 ? (
+                            clues.map((clue) => (
+                                <div
+                                    key={clue.id}
+                                    className={`clue-card ${getClueTypeClass(clue.clueType)} ${clue.isDiscovered ? 'discovered' : 'locked'}`}
+                                >
+                                    <span className="clue-icon">
+                                        {clue.isDiscovered ? '✅' : '🔒'}
+                                    </span>
+                                    <span className="clue-type">{getClueTypeLabel(clue.clueType)}</span>
+                                    <div className="clue-title">
+                                        {clue.isDiscovered ? clue.title : '???'}
+                                    </div>
+                                    <p className="clue-description">
+                                        {clue.isDiscovered ? clue.content : '아직 발견되지 않은 단서입니다.'}
+                                    </p>
+                                </div>
+                            ))
+                        ) : (
+                            <>
+                                <div className="clue-card private">
+                                    <span className="clue-icon">🔐</span>
+                                    <span className="clue-type">🎭 개인 단서</span>
+                                    <div className="clue-title">비밀 정보</div>
+                                    <p className="clue-description">
+                                        당신만 아는 비밀 정보입니다.
+                                    </p>
+                                </div>
+                                <div className="clue-card public discovered">
+                                    <span className="clue-icon">✅</span>
+                                    <span className="clue-type">🔍 공개 단서</span>
+                                    <div className="clue-title">사건 현장 증거</div>
+                                    <p className="clue-description">
+                                        사건 현장에서 발견된 증거입니다.
+                                    </p>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </aside>
             </div>
+
+            {/* Role Modal */}
+            {showRoleModal && roleDetail && (
+                <div className="modal-overlay" onClick={() => setShowRoleModal(false)}>
+                    <div className="modal-content role-modal" onClick={(e) => e.stopPropagation()}>
+                        <button className="modal-close" onClick={() => setShowRoleModal(false)}>×</button>
+                        <div className="role-header">
+                            <span className="role-emoji-lg">{getRoleEmoji(roleDetail.roleType)}</span>
+                            <h2>{roleDetail.roleName || roleDetail.roleType}</h2>
+                        </div>
+                        {roleDetail.description && (
+                            <div className="role-section">
+                                <h4>📖 설명</h4>
+                                <p>{roleDetail.description}</p>
+                            </div>
+                        )}
+                        {roleDetail.objective && (
+                            <div className="role-section">
+                                <h4>🎯 목표</h4>
+                                <p>{roleDetail.objective}</p>
+                            </div>
+                        )}
+                        {roleDetail.secretInfo && (
+                            <div className="role-section secret">
+                                <h4>🔐 비밀 정보</h4>
+                                <p>{roleDetail.secretInfo}</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
+

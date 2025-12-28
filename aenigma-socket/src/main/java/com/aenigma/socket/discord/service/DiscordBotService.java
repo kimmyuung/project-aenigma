@@ -69,4 +69,16 @@ public class DiscordBotService {
     public boolean isConnected() {
         return jda != null && jda.getStatus() == JDA.Status.CONNECTED;
     }
+
+    /**
+     * Discord 서버 초대 링크 반환
+     * 설정된 inviteLink가 있으면 사용, 없으면 null
+     */
+    public String getInviteLink() {
+        String inviteLink = discordProperties.getBot().getInviteLink();
+        if (inviteLink != null && !inviteLink.isBlank()) {
+            return inviteLink;
+        }
+        return null;
+    }
 }

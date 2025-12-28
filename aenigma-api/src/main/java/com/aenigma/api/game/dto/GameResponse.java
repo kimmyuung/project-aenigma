@@ -32,6 +32,11 @@ public class GameResponse {
     private LocalDateTime finishedAt;
 
     /**
+     * Discord 서버 초대 링크 (음성 채팅 참여용)
+     */
+    private String discordInvite;
+
+    /**
      * 플레이어 정보
      */
     @Data
@@ -51,6 +56,13 @@ public class GameResponse {
      * 게임 정보 변환 (역할 비공개)
      */
     public static GameResponse from(Game game, UUID currentUserId) {
+        return from(game, currentUserId, null);
+    }
+
+    /**
+     * 게임 정보 변환 (Discord 초대 링크 포함)
+     */
+    public static GameResponse from(Game game, UUID currentUserId, String discordInvite) {
         List<PlayerInfo> playerInfos = game.getPlayers().stream()
                 .map(player -> {
                     // 본인이거나 게임 종료 시에만 역할 공개
@@ -81,6 +93,7 @@ public class GameResponse {
                 .players(playerInfos)
                 .startedAt(game.getStartedAt())
                 .finishedAt(game.getFinishedAt())
+                .discordInvite(discordInvite)
                 .build();
     }
 }

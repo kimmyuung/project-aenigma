@@ -1,8 +1,8 @@
 package com.aenigma.domain.game.entity;
 
 import com.aenigma.domain.common.entity.BaseTimeEntity;
+import com.aenigma.domain.scenario.entity.ClueType;
 import com.aenigma.domain.scenario.entity.ScenarioClue;
-import com.aenigma.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -59,10 +59,11 @@ public class GameClue extends BaseTimeEntity {
     private String content;
 
     /**
-     * 단서 유형 (PUBLIC, PERSONAL, HIDDEN)
+     * 단서 유형
      */
-    @Column(nullable = false, length = 20)
-    private String clueType;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "clue_type", nullable = false, length = 20)
+    private ClueType clueType;
 
     /**
      * 배정된 플레이어 (개인 단서인 경우)
@@ -126,15 +127,15 @@ public class GameClue extends BaseTimeEntity {
      */
     public boolean isVisibleTo(GamePlayer player) {
         // 공개 단서는 발견되면 모두에게 보임
-        if ("PUBLIC".equals(this.clueType) && this.isDiscovered) {
+        if (this.clueType == ClueType.PUBLIC && this.isDiscovered) {
             return true;
         }
         // 개인 단서는 배정된 플레이어만
-        if ("PERSONAL".equals(this.clueType)) {
+        if (this.clueType == ClueType.PERSONAL) {
             return this.assignedPlayer != null && this.assignedPlayer.equals(player);
         }
         // HIDDEN 단서는 발견자만
-        if ("HIDDEN".equals(this.clueType)) {
+        if (this.clueType == ClueType.HIDDEN) {
             return this.isDiscovered && this.discoveredBy != null && this.discoveredBy.equals(player);
         }
         return false;
@@ -149,12 +150,12 @@ public class GameClue extends BaseTimeEntity {
                 .scenarioClue(scenarioClue)
                 .title(scenarioClue.getTitle())
                 .content(scenarioClue.getContent())
-                .clueType(scenarioClue.getClueType().name())
+                .clueType(scenarioClue.getClueType())
                 .assignedPlayer(assignedPlayer)
                 .revealRound(scenarioClue.getRevealRound())
                 .importance(scenarioClue.getImportance())
                 .imageUrl(scenarioClue.getImageUrl())
-                .isDiscovered("PUBLIC".equals(scenarioClue.getClueType().name()))
+                .isDiscovered(scenarioClue.getClueType() == ClueType.PUBLIC)
                 .build();
     }
 }

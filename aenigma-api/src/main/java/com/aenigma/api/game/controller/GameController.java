@@ -1,5 +1,6 @@
 package com.aenigma.api.game.controller;
 
+import com.aenigma.api.config.DiscordConfig;
 import com.aenigma.api.game.dto.ClueResponse;
 import com.aenigma.api.game.dto.GameResponse;
 import com.aenigma.api.game.dto.RoleDetailResponse;
@@ -35,6 +36,17 @@ public class GameController {
     private final GameService gameService;
     private final RoomService roomService;
     private final VoteService voteService;
+    private final DiscordConfig discordConfig;
+
+    /**
+     * Discord 초대 링크 조회 (활성화 시에만 반환)
+     */
+    private String getDiscordInviteLink() {
+        if (discordConfig.getBot().isEnabled()) {
+            return discordConfig.getBot().getInviteLink();
+        }
+        return null;
+    }
 
     /**
      * 게임 생성 및 역할 배정
@@ -65,7 +77,8 @@ public class GameController {
             gameService.assignRoles(game, room.getMembers());
         }
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(GameResponse.from(game, userId));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(GameResponse.from(game, userId, getDiscordInviteLink()));
     }
 
     /**
@@ -78,7 +91,7 @@ public class GameController {
             @PathVariable UUID gameId) {
 
         Game game = gameService.startGame(gameId);
-        return ResponseEntity.ok(GameResponse.from(game, userId));
+        return ResponseEntity.ok(GameResponse.from(game, userId, getDiscordInviteLink()));
     }
 
     /**
@@ -124,7 +137,7 @@ public class GameController {
         Game game = gameService.findById(gameId)
                 .orElseThrow(() -> new IllegalArgumentException("게임을 찾을 수 없습니다."));
 
-        return ResponseEntity.ok(GameResponse.from(game, userId));
+        return ResponseEntity.ok(GameResponse.from(game, userId, getDiscordInviteLink()));
     }
 
     /**
@@ -186,7 +199,7 @@ public class GameController {
         Game game = gameService.findActiveGameByRoomId(roomId)
                 .orElseThrow(() -> new IllegalArgumentException("진행 중인 게임이 없습니다."));
 
-        return ResponseEntity.ok(GameResponse.from(game, userId));
+        return ResponseEntity.ok(GameResponse.from(game, userId, getDiscordInviteLink()));
     }
 
     /**

@@ -1,4 +1,4 @@
-package com.aenigma.socket.discord.config;
+package com.aenigma.api.config;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -6,13 +6,14 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Discord Bot 설정
+ * Discord 관련 설정 (API 모듈용)
+ * 게임 시작 시 플레이어에게 Discord 초대 링크를 제공하기 위한 설정
  */
 @Configuration
 @ConfigurationProperties(prefix = "discord")
 @Getter
 @Setter
-public class DiscordProperties {
+public class DiscordConfig {
 
     private Bot bot = new Bot();
 
@@ -20,17 +21,8 @@ public class DiscordProperties {
     @Setter
     public static class Bot {
         /**
-         * Discord Bot Token
-         */
-        private String token;
-
-        /**
-         * Discord Guild (서버) ID
-         */
-        private String guildId;
-
-        /**
-         * Discord 서버 초대 링크 (게임 시작 시 플레이어에게 표시)
+         * Discord 서버 초대 링크
+         * 게임 시작 시 플레이어에게 표시됩니다.
          * 예: https://discord.gg/xxxxx
          */
         private String inviteLink;

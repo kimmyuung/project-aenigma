@@ -38,10 +38,10 @@ public class ChatMessage extends BaseTimeEntity {
     private Game game;
 
     /**
-     * 메시지 발신자
+     * 메시지 발신자 (시스템 메시지인 경우 null)
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sender_id", nullable = false)
+    @JoinColumn(name = "sender_id")
     private GamePlayer sender;
 
     /**
