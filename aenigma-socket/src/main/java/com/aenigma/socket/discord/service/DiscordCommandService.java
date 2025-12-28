@@ -112,6 +112,11 @@ public class DiscordCommandService extends ListenerAdapter {
                         .addOption(OptionType.STRING, "action", "reveal", true),
                 Commands.slash("summary", "게임 요약 표시"),
 
+                // === 새 명령어: 라운드 요약 (AI 학습용) ===
+                Commands.slash("roundsummary", "라운드 음성 대화 요약 입력 (AI 학습용)")
+                        .addOption(OptionType.INTEGER, "round", "라운드 번호", true)
+                        .addOption(OptionType.STRING, "content", "대화 요약 내용", true),
+
                 // === 새 명령어: 긴급 제어 ===
                 Commands.slash("pause", "게임 일시 정지"),
                 Commands.slash("resume", "게임 재개"))
@@ -148,6 +153,7 @@ public class DiscordCommandService extends ListenerAdapter {
                 case "unmute" -> handleMuteCommand(event, false);
                 case "result" -> handleResultCommand(event);
                 case "summary" -> handleSummaryCommand(event);
+                case "roundsummary" -> handleRoundSummaryCommand(event);
                 case "pause" -> handlePauseResumeCommand(event, true);
                 case "resume" -> handlePauseResumeCommand(event, false);
                 default -> event.reply("알 수 없는 명령어입니다.").setEphemeral(true).queue();
@@ -863,6 +869,42 @@ public class DiscordCommandService extends ListenerAdapter {
         }
 
         log.info("GM {}이(가) 게임 {}", event.getUser().getName(), pause ? "일시정지" : "재개");
+    }
+
+    /**
+     * 라운드 요약 입력 (AI 학습용)
+     * GM이 음성 대화 내용을 텍스트로 요약 입력
+     */
+    private void handleRoundSummaryCommand(SlashCommandInteractionEvent event) {
+        String channelId = event.getChannel().getId();
+        UUID gameId = getGameIdForChannel(channelId);
+
+        if (gameId == null) {
+            event.reply("❌ 이 채널에 연결된 게임이 없습니다.").setEphemeral(true).queue();
+            return;
+        }
+
+        int round = event.getOption("round").getAsInt();
+        String content = event.getOption("content").getAsString();
+
+        Game game = gameService.findById(gameId)
+                .orElseThrow(() -> new IllegalArgumentException("게임을 찾을 수 없습니다."));
+
+        String phase = game.getPhase() != null ? game.getPhase().name() : "UNKNOWN";
+
+        // 요약 저장 (RoundSummaryService가 없으므로 로그만 기록)
+        // TODO: RoundSummaryService 연동 필요 (aenigma-ai 모듈)
+        log.info("라운드 요약 입력: gameId={}, round={}, phase={}, content={}",
+                gameId, round, phase, content);
+
+        event.reply("📝 **라운드 " + round + " 요약 기록 완료**\n" +
+                "• 페이즈: " + phase + "\n" +
+                "• 내용: " + content.substring(0, Math.min(content.length(), 50)) +
+                (content.length() > 50 ? "..." : "")).setEphemeral(true).queue();
+
+        // WebSocket으로 GM이 요약을 기록했음을 알림 (선택적)
+        chatWebSocketController.broadcastSystemMessage(gameId,
+                "📝 GM이 라운드 " + round + " 대화 요약을 기록했습니다.");
     }
 
     // === Helper Methods ===
