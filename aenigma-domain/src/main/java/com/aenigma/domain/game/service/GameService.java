@@ -79,6 +79,24 @@ public class GameService {
     }
 
     /**
+     * 게임 생성 및 역할 배정 통합 메서드
+     * 시나리오 ID가 있으면 시나리오 기반으로, 없으면 일반 게임으로 생성
+     */
+    @Transactional
+    public Game createAndStartGame(Room room, UUID scenarioId) {
+        Game game;
+        if (scenarioId != null) {
+            game = createGameFromScenario(room, scenarioId);
+            assignRolesFromScenario(game, room.getMembers());
+        } else {
+            game = createGame(room);
+            assignRoles(game, room.getMembers());
+        }
+        log.info("게임 생성 및 역할 배정 완료: gameId={}, scenarioId={}", game.getId(), scenarioId);
+        return game;
+    }
+
+    /**
      * 게임에 플레이어 추가 및 역할 배정
      */
     @Transactional
