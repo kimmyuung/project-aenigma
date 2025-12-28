@@ -183,6 +183,13 @@ export interface Clue {
     discoveredByNickname?: string;
 }
 
+export interface AlibiEntry {
+    time: string;
+    location: string;
+    activity: string;
+    witnesses?: string[];
+}
+
 export interface RoleDetail {
     playerId: string;
     nickname: string;
@@ -192,6 +199,7 @@ export interface RoleDetail {
     description?: string;
     secretInfo?: string;
     objective?: string;
+    alibi?: string; // JSON string of AlibiEntry[]
     isAlive: boolean;
 }
 

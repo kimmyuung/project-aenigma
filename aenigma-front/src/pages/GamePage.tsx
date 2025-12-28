@@ -320,6 +320,21 @@ export function GamePage() {
 
                 {/* Clues Panel */}
                 <aside className="clues-panel">
+                    {/* 내 역할 카드 */}
+                    <div className="role-card" onClick={() => setShowRoleModal(true)}>
+                        <div className="role-card-header">
+                            <span className="role-emoji-lg">{getRoleEmoji(game.myRole)}</span>
+                            <div className="role-card-info">
+                                <span className="role-label">내 역할</span>
+                                <span className="role-name-lg">{roleDetail?.roleName || game.myRole || '미정'}</span>
+                            </div>
+                            <span className="role-arrow">›</span>
+                        </div>
+                        {roleDetail?.objective && (
+                            <p className="role-objective">{roleDetail.objective}</p>
+                        )}
+                    </div>
+
                     <h3>📋 단서</h3>
                     <div className="clues-list">
                         {clues.length > 0 ? (
@@ -364,6 +379,29 @@ export function GamePage() {
                 </aside>
             </div>
 
+            {/* Footer */}
+            <footer className="game-footer">
+                <div className="footer-content">
+                    <div className="footer-section">
+                        <h4>🎭 AENIGMA</h4>
+                        <p>온라인 머더미스터리 게임</p>
+                    </div>
+                    <div className="footer-section">
+                        <h4>게임 정보</h4>
+                        <p>친구들과 함께 추리하며 범인을 찾아내세요!</p>
+                    </div>
+                    <div className="footer-section">
+                        <h4>개발자</h4>
+                        <a href="https://github.com/kimmyuung" target="_blank" rel="noopener noreferrer">
+                            🔗 GitHub: kimmyuung
+                        </a>
+                    </div>
+                </div>
+                <div className="footer-bottom">
+                    <p>© 2024 AENIGMA. All rights reserved.</p>
+                </div>
+            </footer>
+
             {/* Role Modal */}
             {showRoleModal && roleDetail && (
                 <div className="modal-overlay" onClick={() => setShowRoleModal(false)}>
@@ -391,6 +429,32 @@ export function GamePage() {
                                 <p>{roleDetail.secretInfo}</p>
                             </div>
                         )}
+                        {roleDetail.alibi && (() => {
+                            try {
+                                const alibiEntries = JSON.parse(roleDetail.alibi) as { time: string; location: string; activity: string; witnesses?: string[] }[];
+                                return (
+                                    <div className="role-section alibi">
+                                        <h4>📅 사건 당일 알리바이</h4>
+                                        <div className="alibi-timeline">
+                                            {alibiEntries.map((entry, idx) => (
+                                                <div key={idx} className="alibi-entry">
+                                                    <span className="alibi-time">{entry.time}</span>
+                                                    <div className="alibi-content">
+                                                        <span className="alibi-location">📍 {entry.location}</span>
+                                                        <span className="alibi-activity">{entry.activity}</span>
+                                                        {entry.witnesses && entry.witnesses.length > 0 && (
+                                                            <span className="alibi-witnesses">👁️ 목격자: {entry.witnesses.join(', ')}</span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            } catch {
+                                return null;
+                            }
+                        })()}
                     </div>
                 </div>
             )}

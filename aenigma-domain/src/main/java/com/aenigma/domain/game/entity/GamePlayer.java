@@ -80,6 +80,13 @@ public class GamePlayer extends BaseTimeEntity {
     @Column(name = "scenario_role_objective", columnDefinition = "TEXT")
     private String scenarioRoleObjective;
 
+    /**
+     * 시나리오 역할 알리바이 (JSON 형식)
+     * 예: [{"time":"09:00","location":"식당","activity":"아침 식사","witnesses":["집사"]}]
+     */
+    @Column(name = "scenario_role_alibi", columnDefinition = "TEXT")
+    private String scenarioRoleAlibi;
+
     // --- Actions ---
 
     public static GamePlayer create(Game game, User user, GameRole role) {

@@ -29,6 +29,7 @@ public class RoleDetailResponse {
     private String description;
     private String secretInfo;
     private String objective;
+    private String alibi; // JSON 형식: [{"time":"09:00","location":"식당","activity":"아침 식사"}]
 
     private boolean isAlive;
 
@@ -42,6 +43,7 @@ public class RoleDetailResponse {
                 .description(player.getScenarioRoleDescription())
                 .secretInfo(player.getScenarioRoleSecret())
                 .objective(player.getScenarioRoleObjective())
+                .alibi(player.getScenarioRoleAlibi())
                 .isAlive(player.getIsAlive())
                 .build();
     }
