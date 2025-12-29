@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { gameApi, type GamePlayer, type Clue, type RoleDetail } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { useWebSocket, type ChatMessage } from '../hooks/useWebSocket';
 import { PlayerListSkeleton, ClueListSkeleton, ChatSkeleton } from '../components/Skeleton';
 import { MobileNav, type MobileTabType } from '../components/MobileNav';
+import { GameResult } from '../components/GameResult';
 import './GamePage.css';
 
 type GamePhase = 'INTRO' | 'LOBBY' | 'INVESTIGATION' | 'FINAL_VOTE' | 'CONCLUSION' | 'FINISHED';
@@ -21,6 +22,7 @@ interface GameState {
 export function GamePage() {
     const { gameId } = useParams<{ gameId: string }>();
     const { user } = useAuth();
+    const navigate = useNavigate();
     const chatContainerRef = useRef<HTMLDivElement>(null);
 
     const [game, setGame] = useState<GameState | null>(null);
@@ -37,6 +39,11 @@ export function GamePage() {
     const [showRoleModal, setShowRoleModal] = useState(false);
     const [isVoting, setIsVoting] = useState(false);
     const [voteError, setVoteError] = useState<string | null>(null);
+
+    // 게임 결과 상태 (TODO: API 연동 시 setter 사용)
+    const [winnerTeam, _setWinnerTeam] = useState<'CRIMINAL' | 'SUSPECT' | null>(null);
+    const [voteResults, _setVoteResults] = useState<{ targetId: string; targetNickname: string; voteCount: number }[]>([]);
+    const [scenarioInfo, _setScenarioInfo] = useState<{ title?: string; summary?: string }>({});
 
     // 모바일 탭 상태
     const [mobileTab, setMobileTab] = useState<MobileTabType>('chat');
@@ -358,67 +365,19 @@ export function GamePage() {
 
                     {/* Game Result Section (Conclusion/Finished Phase) */}
                     {(game.phase === 'CONCLUSION' || game.phase === 'FINISHED') && (
-                        <div className="result-section">
-                            <div className="result-header">
-                                <span className="result-icon">🏆</span>
-                                <h2>게임 결과</h2>
-                            </div>
-
-                            <div className="result-card winner">
-                                <h3>🎉 시민팀 승리!</h3>
-                                <p>범인을 성공적으로 찾아냈습니다.</p>
-                            </div>
-
-                            <div className="roles-reveal">
-                                <h3>📋 역할 공개</h3>
-                                <div className="roles-list">
-                                    {game.players.map((player) => (
-                                        <div key={player.id} className="role-reveal-item">
-                                            <div className="player-avatar">
-                                                {player.nickname.charAt(0).toUpperCase()}
-                                            </div>
-                                            <div className="role-reveal-info">
-                                                <span className="player-name">{player.nickname}</span>
-                                                <span className="player-role">
-                                                    {getRoleEmoji(player.role)} {player.role || '역할 미정'}
-                                                </span>
-                                            </div>
-                                            {!player.isAlive && <span className="eliminated-badge">💀</span>}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="game-stats">
-                                <h3>📊 게임 통계</h3>
-                                <div className="stats-grid">
-                                    <div className="stat-item">
-                                        <span className="stat-label">게임 시간</span>
-                                        <span className="stat-value">15:32</span>
-                                    </div>
-                                    <div className="stat-item">
-                                        <span className="stat-label">총 라운드</span>
-                                        <span className="stat-value">{game.maxRounds}</span>
-                                    </div>
-                                    <div className="stat-item">
-                                        <span className="stat-label">참가자</span>
-                                        <span className="stat-value">{game.players.length}명</span>
-                                    </div>
-                                    <div className="stat-item">
-                                        <span className="stat-label">생존자</span>
-                                        <span className="stat-value">
-                                            {game.players.filter(p => p.isAlive).length}명
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="result-actions">
-                                <button className="btn btn-primary btn-lg" onClick={() => window.location.href = '/rooms'}>
-                                    🎮 새 게임 시작
-                                </button>
-                            </div>
-                        </div>
+                        <GameResult
+                            winnerTeam={winnerTeam}
+                            players={game.players}
+                            voteResults={voteResults.length > 0 ? voteResults : game.players.map(p => ({
+                                targetId: p.id,
+                                targetNickname: p.nickname,
+                                voteCount: Math.floor(Math.random() * 5) // TODO: 실제 API에서 가져오기
+                            }))}
+                            myRole={roleDetail ?? undefined}
+                            scenarioTitle={scenarioInfo.title}
+                            scenarioSummary={scenarioInfo.summary}
+                            onLeave={() => navigate('/rooms')}
+                        />
                     )}
                 </main>
 

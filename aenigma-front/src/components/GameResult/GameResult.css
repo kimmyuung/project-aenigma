@@ -1,0 +1,310 @@
+/* Game Result Styles */
+
+.game-result {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-lg);
+    background: var(--color-bg-dark);
+    position: relative;
+    overflow: hidden;
+}
+
+.game-result__container {
+    max-width: 600px;
+    width: 100%;
+    padding: var(--space-2xl);
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    position: relative;
+    z-index: 10;
+}
+
+.game-result__container--wide {
+    max-width: 800px;
+}
+
+.game-result__actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    margin-top: var(--space-xl);
+}
+
+/* Winner Announcement */
+.winner-announcement {
+    text-align: center;
+    margin-bottom: var(--space-xl);
+}
+
+.winner-announcement__emoji {
+    font-size: 5rem;
+    margin-bottom: var(--space-md);
+    display: inline-block;
+}
+
+.winner-announcement__title {
+    font-size: 2rem;
+    font-weight: 700;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: var(--space-sm);
+}
+
+.winner-announcement__subtext {
+    color: var(--color-text-secondary);
+    font-size: 1rem;
+}
+
+/* Vote Tally */
+.vote-tally {
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+}
+
+.vote-tally__title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: var(--space-md);
+    color: var(--color-text-primary);
+}
+
+.vote-tally__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.vote-tally__item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.vote-tally__rank {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.vote-tally__item:first-child .vote-tally__rank {
+    background: var(--gradient-primary);
+    color: white;
+}
+
+.vote-tally__name {
+    width: 80px;
+    font-size: 0.875rem;
+    color: var(--color-text-primary);
+    flex-shrink: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.vote-tally__bar-container {
+    flex: 1;
+    height: 8px;
+    background: var(--color-bg-dark);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.vote-tally__bar {
+    height: 100%;
+    background: var(--gradient-primary);
+    border-radius: var(--radius-full);
+    transition: width 1s ease-out;
+}
+
+.vote-tally__count {
+    width: 40px;
+    text-align: right;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    flex-shrink: 0;
+}
+
+/* Back Button */
+.back-button {
+    background: none;
+    border: none;
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+    cursor: pointer;
+    padding: var(--space-sm) 0;
+    margin-bottom: var(--space-md);
+    transition: color var(--transition-fast);
+}
+
+.back-button:hover {
+    color: var(--color-primary);
+}
+
+/* Section Title */
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: var(--space-xl);
+}
+
+/* Role Reveal Grid */
+.role-reveal-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: var(--space-md);
+}
+
+.role-card {
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    text-align: center;
+    transition: all var(--transition-base);
+    position: relative;
+}
+
+.role-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--color-primary);
+}
+
+.role-card--criminal {
+    border-color: var(--color-danger);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.role-card__emoji {
+    font-size: 2.5rem;
+    margin-bottom: var(--space-sm);
+}
+
+.role-card__role {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    text-transform: uppercase;
+    margin-bottom: var(--space-xs);
+}
+
+.role-card--criminal .role-card__role {
+    color: var(--color-danger);
+}
+
+.role-card__name {
+    font-size: 0.875rem;
+    color: var(--color-text-primary);
+    font-weight: 500;
+}
+
+.role-card__dead {
+    position: absolute;
+    top: var(--space-sm);
+    right: var(--space-sm);
+    font-size: 0.75rem;
+}
+
+/* Case Summary */
+.case-summary__title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    text-align: center;
+    color: var(--color-primary);
+    margin-bottom: var(--space-lg);
+}
+
+.case-summary__content {
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.case-summary__text {
+    color: var(--color-text-secondary);
+    line-height: 1.8;
+}
+
+.case-summary__text p {
+    margin-bottom: var(--space-md);
+}
+
+.case-summary__text p:last-child {
+    margin-bottom: 0;
+}
+
+.case-summary__placeholder {
+    text-align: center;
+    color: var(--color-text-muted);
+}
+
+.case-summary__placeholder p {
+    margin-bottom: var(--space-sm);
+}
+
+/* Confetti */
+.confetti-container {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.confetti {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    top: -10px;
+    opacity: 0;
+    animation: confetti-fall 4s ease-in-out infinite;
+}
+
+@keyframes confetti-fall {
+    0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0;
+    }
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .game-result__container {
+        padding: var(--space-lg);
+    }
+
+    .winner-announcement__emoji {
+        font-size: 3rem;
+    }
+
+    .winner-announcement__title {
+        font-size: 1.5rem;
+    }
+
+    .role-reveal-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
