@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom';
 import { gameApi, type GamePlayer, type Clue, type RoleDetail } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { useWebSocket, type ChatMessage } from '../hooks/useWebSocket';
+import { PlayerListSkeleton, ClueListSkeleton, ChatSkeleton } from '../components/Skeleton';
+import { MobileNav, type MobileTabType } from '../components/MobileNav';
 import './GamePage.css';
 
 type GamePhase = 'INTRO' | 'LOBBY' | 'INVESTIGATION' | 'FINAL_VOTE' | 'CONCLUSION' | 'FINISHED';
@@ -36,10 +38,18 @@ export function GamePage() {
     const [isVoting, setIsVoting] = useState(false);
     const [voteError, setVoteError] = useState<string | null>(null);
 
+    // 모바일 탭 상태
+    const [mobileTab, setMobileTab] = useState<MobileTabType>('chat');
+    const [unreadMessages, setUnreadMessages] = useState(0);
+
     // WebSocket 메시지 수신 핸들러
     const handleWebSocketMessage = useCallback((message: ChatMessage) => {
         setMessages(prev => [...prev, message]);
-    }, []);
+        // 모바일에서 채팅 탭이 아닐 때 읽지 않은 메시지 카운트
+        if (mobileTab !== 'chat' && message.senderId !== user?.userId) {
+            setUnreadMessages(prev => prev + 1);
+        }
+    }, [mobileTab, user?.userId]);
 
     // WebSocket 연결
     const {
@@ -210,13 +220,42 @@ export function GamePage() {
         }
     };
 
+    // 모바일 탭 변경 핸들러
+    const handleMobileTabChange = (tab: MobileTabType) => {
+        setMobileTab(tab);
+        if (tab === 'chat') {
+            setUnreadMessages(0);
+        }
+    };
+
     if (isLoading || !game) {
         return (
             <div className="game-page">
-                <div className="loading-container">
-                    <div className="spinner"></div>
-                    <p>게임을 불러오는 중...</p>
+                {/* 스켈레톤 로딩 UI */}
+                <header className="game-header">
+                    <div className="game-info">
+                        <div className="skeleton" style={{ width: '120px', height: '32px', borderRadius: '8px' }} />
+                        <div className="skeleton" style={{ width: '80px', height: '32px', borderRadius: '8px' }} />
+                    </div>
+                    <div className="skeleton" style={{ width: '150px', height: '40px', borderRadius: '8px' }} />
+                </header>
+                <div className="game-content">
+                    <aside className="players-panel">
+                        <h3>참가자</h3>
+                        <PlayerListSkeleton count={5} />
+                    </aside>
+                    <main className="game-main">
+                        <div className="chat-section">
+                            <ChatSkeleton count={6} />
+                        </div>
+                    </main>
+                    <aside className="clues-panel">
+                        <div className="skeleton" style={{ width: '100%', height: '100px', borderRadius: '12px', marginBottom: '1rem' }} />
+                        <h3>📋 단서</h3>
+                        <ClueListSkeleton count={3} />
+                    </aside>
                 </div>
+                <MobileNav activeTab={mobileTab} onTabChange={setMobileTab} />
             </div>
         );
     }
@@ -241,7 +280,7 @@ export function GamePage() {
                 </div>
             </header>
 
-            <div className="game-content">
+            <div className={`game-content mobile-${mobileTab}`}>
                 {/* Players Panel */}
                 <aside className="players-panel">
                     <h3>참가자</h3>
@@ -466,6 +505,13 @@ export function GamePage() {
                     <p>© 2024 AENIGMA. All rights reserved.</p>
                 </div>
             </footer>
+
+            {/* 모바일 네비게이션 */}
+            <MobileNav
+                activeTab={mobileTab}
+                onTabChange={handleMobileTabChange}
+                unreadMessages={unreadMessages}
+            />
 
             {/* Role Modal */}
             {showRoleModal && roleDetail && (

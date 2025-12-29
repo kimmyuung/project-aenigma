@@ -1,0 +1,158 @@
+/* Mobile Navigation Bar */
+.mobile-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: var(--color-bg-card);
+    border-top: 1px solid var(--color-border);
+    z-index: 100;
+    padding: 0.5rem;
+    gap: 0.25rem;
+}
+
+@media (max-width: 1024px) {
+    .mobile-nav {
+        display: flex;
+    }
+}
+
+.mobile-nav-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    padding: 0.5rem;
+}
+
+.mobile-nav-tab:hover {
+    background: var(--color-bg-elevated);
+}
+
+.mobile-nav-tab.active {
+    color: var(--color-primary);
+    background: var(--color-primary-light);
+}
+
+.mobile-nav-tab:active {
+    transform: scale(0.95);
+}
+
+.tab-icon {
+    position: relative;
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.tab-label {
+    font-size: 0.7rem;
+    font-weight: 500;
+}
+
+/* Unread badge */
+.unread-badge {
+    position: absolute;
+    top: -4px;
+    right: -8px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    background: var(--color-danger);
+    color: white;
+    font-size: 0.625rem;
+    font-weight: 600;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulse 2s infinite;
+}
+
+/* Mobile Panel */
+.mobile-panel {
+    position: fixed;
+    background: var(--color-bg-card);
+    z-index: 99;
+    overflow-y: auto;
+}
+
+.mobile-panel-bottom {
+    left: 0;
+    right: 0;
+    bottom: 64px;
+    top: auto;
+    max-height: 60vh;
+    border-top: 1px solid var(--color-border);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.mobile-panel-left {
+    left: 0;
+    top: 0;
+    bottom: 64px;
+    width: 280px;
+    border-right: 1px solid var(--color-border);
+}
+
+.mobile-panel-right {
+    right: 0;
+    top: 0;
+    bottom: 64px;
+    width: 280px;
+    border-left: 1px solid var(--color-border);
+}
+
+/* Mobile-specific game layout adjustments */
+@media (max-width: 1024px) {
+
+    /* Add padding at the bottom for mobile nav */
+    .game-page {
+        padding-bottom: 64px;
+    }
+
+    /* Show panels when corresponding tab is active */
+    .game-content.mobile-players .players-panel,
+    .game-content.mobile-clues .clues-panel {
+        display: block;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 64px;
+        top: auto;
+        max-height: 50vh;
+        border-top: 1px solid var(--color-border);
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        z-index: 99;
+        animation: slideInUp 0.3s ease-out;
+    }
+
+    .game-content.mobile-chat .chat-section {
+        flex: 1;
+    }
+}
+
+/* Overlay for mobile panels */
+.mobile-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 98;
+    animation: fadeIn 0.2s ease-out;
+}
+
+@media (max-width: 1024px) {
+    .mobile-overlay.visible {
+        display: block;
+    }
+}

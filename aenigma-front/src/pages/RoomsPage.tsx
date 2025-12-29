@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { roomApi, type Room } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { Header } from '../components/Header';
+import { RoomCardSkeleton } from '../components/Skeleton';
 import './RoomsPage.css';
 
 export function RoomsPage() {
@@ -62,10 +63,7 @@ export function RoomsPage() {
                 </div>
 
                 {isLoading ? (
-                    <div className="rooms-loading">
-                        <div className="spinner"></div>
-                        <p>방 목록을 불러오는 중...</p>
-                    </div>
+                    <RoomCardSkeleton count={4} />
                 ) : error ? (
                     <div className="rooms-error">
                         <p>{error}</p>
