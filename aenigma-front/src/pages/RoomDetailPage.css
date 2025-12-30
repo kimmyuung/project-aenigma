@@ -74,10 +74,132 @@
 /* Content */
 .room-content {
     display: grid;
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 2rem;
     margin-bottom: 2rem;
 }
+
+/* Chat Section */
+.chat-section {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    height: 400px;
+}
+
+.chat-section h2 {
+    font-size: 1.25rem;
+    color: var(--text-primary);
+    margin: 0 0 1rem 0;
+}
+
+.chat-container {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    margin-bottom: 1rem;
+}
+
+.chat-message {
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius-md);
+    max-width: 85%;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.chat-message.chat {
+    background: rgba(255, 255, 255, 0.05);
+    align-self: flex-start;
+}
+
+.chat-message.mine {
+    background: rgba(79, 70, 229, 0.3);
+    align-self: flex-end;
+}
+
+.chat-message.system,
+.chat-message.join,
+.chat-message.leave {
+    align-self: center;
+    background: transparent;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.chat-message .sender {
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--primary);
+    display: block;
+    margin-bottom: 2px;
+}
+
+.chat-message.mine .sender {
+    color: var(--secondary);
+}
+
+.chat-message .content {
+    font-size: 0.9rem;
+}
+
+.system-message {
+    font-style: italic;
+    text-align: center;
+}
+
+.chat-input-form {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.chat-input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-full);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.chat-input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.chat-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Ready State */
+.member-card.ready {
+    border-color: var(--success);
+    background: rgba(16, 185, 129, 0.1);
+}
+
+"
+
 
 /* Members Section */
 .members-section h2,

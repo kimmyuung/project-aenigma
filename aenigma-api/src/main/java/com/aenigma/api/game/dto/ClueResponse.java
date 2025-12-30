@@ -32,7 +32,7 @@ public class ClueResponse {
                 .id(clue.getId())
                 .title(clue.getTitle())
                 .content(clue.getContent())
-                .clueType(clue.getClueType())
+                .clueType(clue.getClueType() != null ? clue.getClueType().name() : null)
                 .revealRound(clue.getRevealRound())
                 .importance(clue.getImportance())
                 .imageUrl(clue.getImageUrl())

@@ -1,5 +1,7 @@
 package com.aenigma.api.global.exception;
 
+import com.aenigma.domain.common.exception.DomainErrorCode;
+import com.aenigma.domain.common.exception.DomainException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -8,6 +10,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -18,7 +21,7 @@ import java.util.List;
 public class GlobalExceptionHandler {
 
     /**
-     * BusinessException 처리
+     * BusinessException 처리 (API 모듈)
      */
     @ExceptionHandler(BusinessException.class)
     protected ResponseEntity<ErrorResponse> handleBusinessException(BusinessException e) {
@@ -26,6 +29,22 @@ public class GlobalExceptionHandler {
         ErrorCode errorCode = e.getErrorCode();
         ErrorResponse response = ErrorResponse.of(errorCode, e.getMessage());
         return new ResponseEntity<>(response, errorCode.getStatus());
+    }
+
+    /**
+     * DomainException 처리 (Domain 모듈)
+     */
+    @ExceptionHandler(DomainException.class)
+    protected ResponseEntity<ErrorResponse> handleDomainException(DomainException e) {
+        log.warn("DomainException: {} (code={})", e.getMessage(), e.getErrorCode().getCode());
+        DomainErrorCode errorCode = e.getErrorCode();
+        ErrorResponse response = ErrorResponse.builder()
+                .code(errorCode.getCode())
+                .message(e.getMessage())
+                .status(errorCode.getStatus())
+                .timestamp(LocalDateTime.now())
+                .build();
+        return ResponseEntity.status(errorCode.getStatus()).body(response);
     }
 
     /**

@@ -3,6 +3,8 @@ package com.aenigma.domain.chat.service;
 import com.aenigma.domain.chat.entity.ChatMessage;
 import com.aenigma.domain.chat.entity.MessageType;
 import com.aenigma.domain.chat.repository.ChatMessageRepository;
+import com.aenigma.domain.common.exception.DomainErrorCode;
+import com.aenigma.domain.common.exception.DomainException;
 import com.aenigma.domain.game.entity.Game;
 import com.aenigma.domain.game.entity.GamePlayer;
 import com.aenigma.domain.game.repository.GameRepository;
@@ -128,20 +130,21 @@ public class ChatService {
 
     private Game findGameById(UUID gameId) {
         return gameRepository.findById(gameId)
-                .orElseThrow(() -> new IllegalArgumentException("게임을 찾을 수 없습니다."));
+                .orElseThrow(() -> new DomainException(DomainErrorCode.GAME_NOT_FOUND));
     }
 
     private GamePlayer findPlayerById(UUID playerId) {
         return gamePlayerRepository.findById(playerId)
-                .orElseThrow(() -> new IllegalArgumentException("플레이어를 찾을 수 없습니다."));
+                .orElseThrow(() -> new DomainException(DomainErrorCode.PLAYER_NOT_FOUND));
     }
 
     private void validateMessageContent(String content) {
         if (content == null || content.isBlank()) {
-            throw new IllegalArgumentException("메시지 내용이 비어있습니다.");
+            throw new DomainException(DomainErrorCode.MESSAGE_EMPTY);
         }
         if (content.length() > MAX_MESSAGE_LENGTH) {
-            throw new IllegalArgumentException("메시지가 너무 깁니다. (최대 " + MAX_MESSAGE_LENGTH + "자)");
+            throw new DomainException(DomainErrorCode.MESSAGE_TOO_LONG,
+                    "메시지가 너무 깁니다. (최대 " + MAX_MESSAGE_LENGTH + "자)");
         }
     }
 
@@ -149,13 +152,13 @@ public class ChatService {
         boolean isInGame = game.getPlayers().stream()
                 .anyMatch(p -> p.getId().equals(player.getId()));
         if (!isInGame) {
-            throw new IllegalStateException("해당 게임에 참여하지 않은 플레이어입니다.");
+            throw new DomainException(DomainErrorCode.PLAYER_NOT_IN_GAME);
         }
     }
 
     private void validatePlayerAlive(GamePlayer player) {
         if (!player.getIsAlive()) {
-            throw new IllegalStateException("사망한 플레이어는 메시지를 보낼 수 없습니다.");
+            throw new DomainException(DomainErrorCode.DEAD_PLAYER_CANNOT_CHAT);
         }
     }
 }

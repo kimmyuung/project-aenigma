@@ -1,0 +1,134 @@
+.clues-panel {
+    width: 280px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    border-left: 1px solid var(--glass-border);
+    padding: var(--spacing-md);
+    overflow-y: auto;
+}
+
+.clues-panel h3 {
+    margin: var(--spacing-md) 0;
+    font-size: 1rem;
+    color: var(--color-text-secondary);
+}
+
+/* Role Card */
+.role-card {
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.2), rgba(168, 85, 247, 0.2));
+    border: 1px solid rgba(79, 70, 229, 0.3);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.role-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(79, 70, 229, 0.3);
+}
+
+.role-card-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.role-emoji-lg {
+    font-size: 2rem;
+}
+
+.role-card-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.role-label {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+}
+
+.role-name-lg {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.role-arrow {
+    font-size: 1.5rem;
+    opacity: 0.5;
+}
+
+.role-objective {
+    margin-top: var(--spacing-sm);
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    line-height: 1.4;
+}
+
+/* Clues List */
+.clues-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.clue-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    transition: all var(--transition-base);
+}
+
+.clue-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.clue-card.public {
+    border-left: 3px solid var(--color-primary);
+}
+
+.clue-card.private {
+    border-left: 3px solid var(--color-secondary);
+}
+
+.clue-card.secret {
+    border-left: 3px solid var(--color-warning);
+}
+
+.clue-card.locked {
+    opacity: 0.6;
+}
+
+.clue-icon {
+    font-size: 0.9rem;
+    margin-right: var(--spacing-xs);
+}
+
+.clue-type {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+}
+
+.clue-title {
+    font-weight: 600;
+    margin: var(--spacing-xs) 0;
+}
+
+.clue-description {
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    line-height: 1.4;
+    margin: 0;
+}
+
+/* Mobile styles */
+@media (max-width: 768px) {
+    .clues-panel {
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid var(--glass-border);
+    }
+}

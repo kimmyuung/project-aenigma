@@ -1,5 +1,7 @@
 package com.aenigma.domain.game.service;
 
+import com.aenigma.domain.common.exception.DomainErrorCode;
+import com.aenigma.domain.common.exception.DomainException;
 import com.aenigma.domain.game.entity.Game;
 import com.aenigma.domain.game.entity.GameClue;
 import com.aenigma.domain.game.entity.GamePhase;
@@ -59,7 +61,7 @@ public class GameService {
     @Transactional
     public Game createGameFromScenario(Room room, UUID scenarioId) {
         Scenario scenario = scenarioRepository.findById(scenarioId)
-                .orElseThrow(() -> new IllegalArgumentException("시나리오를 찾을 수 없습니다: " + scenarioId));
+                .orElseThrow(() -> new DomainException(DomainErrorCode.SCENARIO_NOT_FOUND));
 
         long roundNumber = gameRepository.countByRoomId(room.getId()) + 1;
 
@@ -124,12 +126,12 @@ public class GameService {
     public List<GamePlayer> assignRolesFromScenario(Game game, List<RoomMember> members) {
         Scenario scenario = game.getScenario();
         if (scenario == null) {
-            throw new IllegalStateException("시나리오가 없는 게임입니다. 일반 역할 배정을 사용하세요.");
+            throw new DomainException(DomainErrorCode.SCENARIO_NOT_SET);
         }
 
         List<ScenarioRole> scenarioRoles = scenario.getRoles();
         if (members.size() > scenarioRoles.size()) {
-            throw new IllegalArgumentException(
+            throw new DomainException(DomainErrorCode.PLAYER_COUNT_MISMATCH,
                     String.format("참가자 수(%d)가 시나리오 역할 수(%d)를 초과합니다.",
                             members.size(), scenarioRoles.size()));
         }
@@ -220,7 +222,7 @@ public class GameService {
     @Transactional
     public Game startGame(UUID gameId) {
         Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new IllegalArgumentException("게임을 찾을 수 없습니다."));
+                .orElseThrow(() -> new DomainException(DomainErrorCode.GAME_NOT_FOUND));
 
         game.start();
         return gameRepository.save(game);
@@ -232,7 +234,7 @@ public class GameService {
     @Transactional
     public Game nextPhase(UUID gameId) {
         Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new IllegalArgumentException("게임을 찾을 수 없습니다."));
+                .orElseThrow(() -> new DomainException(DomainErrorCode.GAME_NOT_FOUND));
 
         game.nextPhase();
         game.checkWinCondition();
@@ -246,7 +248,7 @@ public class GameService {
     @Transactional
     public GamePlayer eliminatePlayer(UUID gameId, UUID userId) {
         GamePlayer player = gamePlayerRepository.findByGameIdAndUserId(gameId, userId)
-                .orElseThrow(() -> new IllegalArgumentException("플레이어를 찾을 수 없습니다."));
+                .orElseThrow(() -> new DomainException(DomainErrorCode.PLAYER_NOT_FOUND));
 
         player.eliminate();
         return gamePlayerRepository.save(player);
@@ -278,7 +280,7 @@ public class GameService {
      */
     public List<GameClue> getVisibleClues(UUID gameId, UUID userId) {
         GamePlayer player = gamePlayerRepository.findByGameIdAndUserId(gameId, userId)
-                .orElseThrow(() -> new IllegalArgumentException("플레이어를 찾을 수 없습니다."));
+                .orElseThrow(() -> new DomainException(DomainErrorCode.PLAYER_NOT_FOUND));
 
         return gameClueRepository.findVisibleClues(gameId, player.getId());
     }
@@ -288,7 +290,7 @@ public class GameService {
      */
     public GamePlayer getPlayerRole(UUID gameId, UUID userId) {
         return gamePlayerRepository.findByGameIdAndUserId(gameId, userId)
-                .orElseThrow(() -> new IllegalArgumentException("플레이어를 찾을 수 없습니다."));
+                .orElseThrow(() -> new DomainException(DomainErrorCode.PLAYER_NOT_FOUND));
     }
 
     /**

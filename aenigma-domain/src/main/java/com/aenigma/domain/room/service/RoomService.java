@@ -1,5 +1,7 @@
 package com.aenigma.domain.room.service;
 
+import com.aenigma.domain.common.exception.DomainErrorCode;
+import com.aenigma.domain.common.exception.DomainException;
 import com.aenigma.domain.room.entity.*;
 import com.aenigma.domain.room.repository.RoomMemberRepository;
 import com.aenigma.domain.room.repository.RoomRepository;
@@ -58,18 +60,18 @@ public class RoomService {
     @Transactional
     public RoomMember joinRoom(String roomCode, User user, String password) {
         Room room = roomRepository.findByRoomCode(roomCode)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 방입니다: " + roomCode));
+                .orElseThrow(() -> new DomainException(DomainErrorCode.ROOM_NOT_FOUND));
 
         if (!room.canJoin()) {
-            throw new IllegalStateException("현재 입장할 수 없는 방입니다");
+            throw new DomainException(DomainErrorCode.ROOM_NOT_JOINABLE);
         }
 
         if (room.isPrivate() && !room.getPassword().equals(password)) {
-            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다");
+            throw new DomainException(DomainErrorCode.WRONG_PASSWORD);
         }
 
         if (roomMemberRepository.existsByRoomAndUser(room, user)) {
-            throw new IllegalStateException("이미 참여 중인 방입니다");
+            throw new DomainException(DomainErrorCode.ALREADY_IN_ROOM);
         }
 
         RoomMember member = RoomMember.createMember(room, user);
@@ -83,10 +85,10 @@ public class RoomService {
     @Transactional
     public void leaveRoom(UUID roomId, User user) {
         Room room = roomRepository.findById(roomId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 방입니다"));
+                .orElseThrow(() -> new DomainException(DomainErrorCode.ROOM_NOT_FOUND));
 
         RoomMember member = roomMemberRepository.findByRoomAndUser(room, user)
-                .orElseThrow(() -> new IllegalStateException("참여 중인 방이 아닙니다"));
+                .orElseThrow(() -> new DomainException(DomainErrorCode.NOT_IN_ROOM));
 
         boolean wasHost = member.getIsHost();
         roomMemberRepository.delete(member);
@@ -108,15 +110,15 @@ public class RoomService {
     @Transactional
     public void startGame(UUID roomId, User host) {
         Room room = roomRepository.findById(roomId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 방입니다"));
+                .orElseThrow(() -> new DomainException(DomainErrorCode.ROOM_NOT_FOUND));
 
         if (!room.getHost().getId().equals(host.getId())) {
-            throw new IllegalStateException("방장만 게임을 시작할 수 있습니다");
+            throw new DomainException(DomainErrorCode.NOT_ROOM_HOST);
         }
 
         long readyCount = roomMemberRepository.countByRoomAndIsReadyTrue(room);
         if (readyCount < room.getMembers().size()) {
-            throw new IllegalStateException("모든 참여자가 준비되지 않았습니다");
+            throw new DomainException(DomainErrorCode.NOT_ALL_READY);
         }
 
         room.startGame();
@@ -188,7 +190,7 @@ public class RoomService {
             attempts++;
 
             if (attempts > MAX_CODE_ATTEMPTS) {
-                throw new IllegalStateException("방 코드 생성 실패: 최대 시도 횟수 초과");
+                throw new DomainException(DomainErrorCode.ROOM_CODE_GENERATION_FAILED);
             }
         } while (roomRepository.existsByRoomCode(code));
 

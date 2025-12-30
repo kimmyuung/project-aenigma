@@ -1,0 +1,83 @@
+.players-panel {
+    width: 220px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    border-right: 1px solid var(--glass-border);
+    padding: var(--spacing-md);
+    overflow-y: auto;
+}
+
+.players-panel h3 {
+    margin-bottom: var(--spacing-md);
+    font-size: 1rem;
+    color: var(--color-text-secondary);
+}
+
+.players-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.player-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.player-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.player-item.selected {
+    background: rgba(79, 70, 229, 0.3);
+    border: 1px solid var(--color-primary);
+}
+
+.player-item.eliminated {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.player-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.player-name {
+    flex: 1;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.eliminated-badge,
+.voted-badge {
+    font-size: 0.85rem;
+}
+
+.voted-badge {
+    color: var(--color-success);
+}
+
+/* Mobile styles */
+@media (max-width: 768px) {
+    .players-panel {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--glass-border);
+    }
+}

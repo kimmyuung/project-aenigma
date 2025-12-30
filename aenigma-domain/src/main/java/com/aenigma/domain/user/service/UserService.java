@@ -1,5 +1,7 @@
 package com.aenigma.domain.user.service;
 
+import com.aenigma.domain.common.exception.DomainErrorCode;
+import com.aenigma.domain.common.exception.DomainException;
 import com.aenigma.domain.user.entity.User;
 import com.aenigma.domain.user.entity.UserRole;
 import com.aenigma.domain.user.repository.UserRepository;
@@ -59,7 +61,7 @@ public class UserService {
             attempts++;
 
             if (attempts > MAX_TAG_ATTEMPTS) {
-                throw new IllegalStateException("고유 username 생성 실패: 최대 시도 횟수 초과");
+                throw new DomainException(DomainErrorCode.USERNAME_GENERATION_FAILED);
             }
         } while (userRepository.existsByUsername(username));
 
@@ -79,7 +81,7 @@ public class UserService {
             attempts++;
 
             if (attempts > MAX_TAG_ATTEMPTS) {
-                throw new IllegalStateException("고유 displayTag 생성 실패: 최대 시도 횟수 초과");
+                throw new DomainException(DomainErrorCode.DISPLAYTAG_GENERATION_FAILED);
             }
         } while (usedTags.contains(tag));
 
@@ -120,7 +122,7 @@ public class UserService {
     @Transactional
     public User login(String username) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + username));
+                .orElseThrow(() -> new DomainException(DomainErrorCode.USER_NOT_FOUND));
 
         user.updateLastLogin();
         log.info("사용자 로그인: {} ({})", user.getDisplayName(), user.getUsername());
@@ -131,7 +133,7 @@ public class UserService {
     @Transactional
     public User changeNickname(UUID userId, String newNickname) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+                .orElseThrow(() -> new DomainException(DomainErrorCode.USER_NOT_FOUND));
 
         String newDisplayTag = generateUniqueDisplayTag(newNickname);
         user.changeNickname(newNickname, newDisplayTag);
@@ -144,7 +146,7 @@ public class UserService {
     @Transactional
     public void deactivateUser(UUID userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+                .orElseThrow(() -> new DomainException(DomainErrorCode.USER_NOT_FOUND));
 
         user.deactivate();
         log.info("사용자 비활성화: {} ({})", user.getDisplayName(), user.getUsername());

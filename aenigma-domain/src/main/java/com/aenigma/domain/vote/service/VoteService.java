@@ -1,5 +1,7 @@
 package com.aenigma.domain.vote.service;
 
+import com.aenigma.domain.common.exception.DomainErrorCode;
+import com.aenigma.domain.common.exception.DomainException;
 import com.aenigma.domain.game.entity.Game;
 import com.aenigma.domain.game.entity.GamePlayer;
 import com.aenigma.domain.game.repository.GamePlayerRepository;
@@ -34,26 +36,26 @@ public class VoteService {
     public Vote castVote(UUID gameId, UUID voterId, UUID targetId, VoteType voteType, int round) {
         // 이미 투표했는지 확인
         if (voteRepository.existsByGameIdAndVoterIdAndRound(gameId, voterId, round)) {
-            throw new IllegalStateException("이미 이번 라운드에 투표하셨습니다.");
+            throw new DomainException(DomainErrorCode.ALREADY_VOTED);
         }
 
         Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new IllegalArgumentException("게임을 찾을 수 없습니다."));
+                .orElseThrow(() -> new DomainException(DomainErrorCode.GAME_NOT_FOUND));
 
         GamePlayer voter = gamePlayerRepository.findById(voterId)
-                .orElseThrow(() -> new IllegalArgumentException("투표자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new DomainException(DomainErrorCode.PLAYER_NOT_FOUND, "투표자를 찾을 수 없습니다."));
 
         GamePlayer target = gamePlayerRepository.findById(targetId)
-                .orElseThrow(() -> new IllegalArgumentException("투표 대상을 찾을 수 없습니다."));
+                .orElseThrow(() -> new DomainException(DomainErrorCode.PLAYER_NOT_FOUND, "투표 대상을 찾을 수 없습니다."));
 
         // 생존자만 투표 가능
         if (!voter.getIsAlive()) {
-            throw new IllegalStateException("사망한 플레이어는 투표할 수 없습니다.");
+            throw new DomainException(DomainErrorCode.CANNOT_VOTE_DEAD_PLAYER);
         }
 
         // 생존자만 투표 대상 가능
         if (!target.getIsAlive()) {
-            throw new IllegalArgumentException("사망한 플레이어에게 투표할 수 없습니다.");
+            throw new DomainException(DomainErrorCode.CANNOT_VOTE_FOR_DEAD);
         }
 
         Vote vote = Vote.create(game, voter, target, voteType, round);
@@ -72,11 +74,11 @@ public class VoteService {
     @Transactional
     public Vote vote(UUID gameId, UUID userId, UUID targetPlayerId) {
         Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new IllegalArgumentException("게임을 찾을 수 없습니다."));
+                .orElseThrow(() -> new DomainException(DomainErrorCode.GAME_NOT_FOUND));
 
         // userId로부터 해당 게임의 플레이어 찾기
         GamePlayer voter = gamePlayerRepository.findByGameIdAndUserId(gameId, userId)
-                .orElseThrow(() -> new IllegalArgumentException("이 게임의 플레이어가 아닙니다."));
+                .orElseThrow(() -> new DomainException(DomainErrorCode.PLAYER_NOT_IN_GAME, "이 게임의 플레이어가 아닙니다."));
 
         return castVote(gameId, voter.getId(), targetPlayerId, VoteType.FINAL_VOTE, game.getInvestigationRound());
     }
@@ -131,7 +133,7 @@ public class VoteService {
      */
     public boolean isVotingComplete(UUID gameId, int round) {
         Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new IllegalArgumentException("게임을 찾을 수 없습니다."));
+                .orElseThrow(() -> new DomainException(DomainErrorCode.GAME_NOT_FOUND));
 
         long alivePlayerCount = game.getPlayers().stream()
                 .filter(GamePlayer::getIsAlive)

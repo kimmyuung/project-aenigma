@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { roomApi, type Room } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { Header } from '../components/Header';
 import { RoomCardSkeleton } from '../components/Skeleton';
 import './RoomsPage.css';
+
+type StatusFilter = 'ALL' | 'WAITING' | 'PLAYING';
 
 export function RoomsPage() {
     const [rooms, setRooms] = useState<Room[]>([]);
@@ -14,6 +16,10 @@ export function RoomsPage() {
     const [showJoinModal, setShowJoinModal] = useState(false);
     const { isAuthenticated } = useAuth();
     const navigate = useNavigate();
+
+    // 검색 및 필터 상태
+    const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
 
     useEffect(() => {
         if (!isAuthenticated) {
@@ -35,6 +41,33 @@ export function RoomsPage() {
         }
     };
 
+    // 필터링된 방 목록
+    const filteredRooms = useMemo(() => {
+        return rooms.filter(room => {
+            // 검색어 필터
+            const matchesSearch = searchQuery.trim() === '' ||
+                room.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                room.hostNickname.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                room.roomCode.toLowerCase().includes(searchQuery.toLowerCase());
+
+            // 상태 필터
+            const matchesStatus = statusFilter === 'ALL' || room.status === statusFilter;
+
+            return matchesSearch && matchesStatus;
+        });
+    }, [rooms, searchQuery, statusFilter]);
+
+    // 각 상태별 방 개수
+    const roomCounts = useMemo(() => ({
+        ALL: rooms.length,
+        WAITING: rooms.filter(r => r.status === 'WAITING').length,
+        PLAYING: rooms.filter(r => r.status === 'PLAYING').length,
+    }), [rooms]);
+
+    const handleClearSearch = () => {
+        setSearchQuery('');
+        setStatusFilter('ALL');
+    };
 
     return (
         <div className="rooms-page">
@@ -62,6 +95,45 @@ export function RoomsPage() {
                     </div>
                 </div>
 
+                {/* 검색 및 필터 */}
+                <div className="rooms-filters">
+                    <div className="search-box">
+                        <span className="search-icon">🔍</span>
+                        <input
+                            type="text"
+                            className="search-input"
+                            placeholder="방 제목, 방장, 코드로 검색..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                        {searchQuery && (
+                            <button className="search-clear" onClick={() => setSearchQuery('')}>
+                                ✕
+                            </button>
+                        )}
+                    </div>
+                    <div className="filter-tabs">
+                        <button
+                            className={`filter-tab ${statusFilter === 'ALL' ? 'active' : ''}`}
+                            onClick={() => setStatusFilter('ALL')}
+                        >
+                            전체 <span className="count">{roomCounts.ALL}</span>
+                        </button>
+                        <button
+                            className={`filter-tab ${statusFilter === 'WAITING' ? 'active' : ''}`}
+                            onClick={() => setStatusFilter('WAITING')}
+                        >
+                            대기 중 <span className="count">{roomCounts.WAITING}</span>
+                        </button>
+                        <button
+                            className={`filter-tab ${statusFilter === 'PLAYING' ? 'active' : ''}`}
+                            onClick={() => setStatusFilter('PLAYING')}
+                        >
+                            진행 중 <span className="count">{roomCounts.PLAYING}</span>
+                        </button>
+                    </div>
+                </div>
+
                 {isLoading ? (
                     <RoomCardSkeleton count={4} />
                 ) : error ? (
@@ -83,12 +155,28 @@ export function RoomsPage() {
                             방 만들기
                         </button>
                     </div>
-                ) : (
-                    <div className="rooms-grid">
-                        {rooms.map((room) => (
-                            <RoomCard key={room.id} room={room} onJoined={loadRooms} />
-                        ))}
+                ) : filteredRooms.length === 0 ? (
+                    <div className="rooms-empty search-empty">
+                        <span className="empty-icon">🔍</span>
+                        <h3>검색 결과가 없습니다</h3>
+                        <p>다른 검색어나 필터를 시도해보세요</p>
+                        <button className="btn btn-secondary" onClick={handleClearSearch}>
+                            필터 초기화
+                        </button>
                     </div>
+                ) : (
+                    <>
+                        <div className="rooms-result-info">
+                            {searchQuery || statusFilter !== 'ALL' ? (
+                                <span>{filteredRooms.length}개의 방을 찾았습니다</span>
+                            ) : null}
+                        </div>
+                        <div className="rooms-grid">
+                            {filteredRooms.map((room) => (
+                                <RoomCard key={room.id} room={room} onJoined={loadRooms} />
+                            ))}
+                        </div>
+                    </>
                 )}
             </main>
 
@@ -152,9 +240,11 @@ function RoomCard({ room, onJoined: _onJoined }: { room: Room; onJoined: () => v
             <button
                 className="btn btn-primary btn-block"
                 onClick={handleJoin}
-                disabled={isJoining || room.currentPlayerCount >= room.maxPlayers}
+                disabled={isJoining || room.currentPlayerCount >= room.maxPlayers || room.status === 'PLAYING'}
             >
-                {isJoining ? '입장 중...' : room.currentPlayerCount >= room.maxPlayers ? '인원 초과' : '입장하기'}
+                {isJoining ? '입장 중...' :
+                    room.status === 'PLAYING' ? '게임 중' :
+                        room.currentPlayerCount >= room.maxPlayers ? '인원 초과' : '입장하기'}
             </button>
         </div>
     );
