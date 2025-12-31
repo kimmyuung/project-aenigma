@@ -26,6 +26,7 @@ public class ParsedScenario {
     private String title;
     private String description;
     private String backgroundStory;
+    private String caseSummary; // 사건의 전말 (게임 종료 후 공개)
     private int minPlayers;
     private int maxPlayers;
     private int estimatedMinutes;

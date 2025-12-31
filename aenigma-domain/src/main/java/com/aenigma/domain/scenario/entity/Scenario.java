@@ -47,6 +47,13 @@ public class Scenario extends BaseTimeEntity {
     private String backgroundStory;
 
     /**
+     * 사건의 전말 (게임 종료 후 공개)
+     * 진범의 동기, 사건 경위, 단서의 의미 등을 포함합니다.
+     */
+    @Column(columnDefinition = "TEXT")
+    private String caseSummary;
+
+    /**
      * 작가 (시나리오 제작자)
      */
     @ManyToOne(fetch = FetchType.LAZY)

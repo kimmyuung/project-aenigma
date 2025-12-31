@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { gameApi, type Clue } from '../api/client';
+import { gameApi, voteApi, type Clue } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
-import { useWebSocket, type ChatMessage } from '../hooks/useWebSocket';
+import { useWebSocket, type ChatMessage, type ConnectionState } from '../hooks/useWebSocket';
+import { useToast } from '../components/error/ToastProvider';
 import { PlayerListSkeleton, ClueListSkeleton, ChatSkeleton } from '../components/Skeleton';
 import { MobileNav, type MobileTabType } from '../components/MobileNav';
 import { GameResult } from '../components/GameResult';
@@ -13,6 +14,7 @@ import {
     CluePanel,
     VotePanel,
     RoleModal,
+    ConnectionStatus,
     type GamePhase,
     type GameState,
     type RoleDetail,
@@ -31,7 +33,8 @@ export function GamePage() {
     const [isLoading, setIsLoading] = useState(true);
     const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
     const [votedPlayer, setVotedPlayer] = useState<string | null>(null);
-    const [wsStatus, setWsStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
+    const [wsConnectionState, setWsConnectionState] = useState<ConnectionState>('connecting');
+    const toast = useToast();
 
     // 추가된 상태
     const [clues, setClues] = useState<Clue[]>([]);
@@ -40,10 +43,11 @@ export function GamePage() {
     const [isVoting, setIsVoting] = useState(false);
     const [voteError, setVoteError] = useState<string | null>(null);
 
-    // 게임 결과 상태 (TODO: API 연동 시 setter 사용)
-    const [winnerTeam, _setWinnerTeam] = useState<'CRIMINAL' | 'SUSPECT' | null>(null);
-    const [voteResults, _setVoteResults] = useState<{ targetId: string; targetNickname: string; voteCount: number }[]>([]);
-    const [scenarioInfo, _setScenarioInfo] = useState<{ title?: string; summary?: string }>({});
+    // 게임 결과 상태
+    const [winnerTeam, setWinnerTeam] = useState<'CRIMINAL' | 'SUSPECT' | 'DETECTIVE' | null>(null);
+    const [voteResults, setVoteResults] = useState<{ targetId: string; targetNickname: string; voteCount: number }[]>([]);
+    const [scenarioInfo, setScenarioInfo] = useState<{ title?: string; summary?: string }>({});
+    const [isLoadingResults, setIsLoadingResults] = useState(false);
 
     // 모바일 탭 상태
     const [mobileTab, setMobileTab] = useState<MobileTabType>('chat');
@@ -67,13 +71,48 @@ export function GamePage() {
     }, [mobileTab, user?.userId]);
 
     // WebSocket 연결
-    const { sendPublicMessage } = useWebSocket({
+    const {
+        sendPublicMessage,
+        connectionState,
+        retryCount,
+        maxRetries,
+        queuedMessageCount,
+        reconnect,
+    } = useWebSocket({
         gameId: gameId || '',
         userId: user?.userId || '',
         onMessage: handleWebSocketMessage,
-        onConnect: () => setWsStatus('connected'),
-        onDisconnect: () => setWsStatus('disconnected'),
+        onConnect: () => {
+            setWsConnectionState('connected');
+            toast.success('연결됨', '채팅 서버에 연결되었습니다.');
+        },
+        onDisconnect: () => setWsConnectionState('disconnected'),
+        onConnectionStateChange: setWsConnectionState,
+        onError: (error) => toast.error('연결 오류', error),
     });
+
+    // 메시지 큐 이벤트 처리
+    useEffect(() => {
+        const handleQueueFlushed = (e: CustomEvent) => {
+            toast.success('메시지 전송 완료', `${e.detail.count}개의 대기 메시지가 전송되었습니다.`);
+        };
+        const handleMessageQueued = () => {
+            toast.info('메시지 대기 중', '연결 복구 후 자동으로 전송됩니다.');
+        };
+        const handleSendFailed = () => {
+            toast.error('전송 실패', '메시지를 보낼 수 없습니다.');
+        };
+
+        window.addEventListener('websocket-queue-flushed', handleQueueFlushed as EventListener);
+        window.addEventListener('websocket-message-queued', handleMessageQueued as EventListener);
+        window.addEventListener('websocket-send-failed', handleSendFailed as EventListener);
+
+        return () => {
+            window.removeEventListener('websocket-queue-flushed', handleQueueFlushed as EventListener);
+            window.removeEventListener('websocket-message-queued', handleMessageQueued as EventListener);
+            window.removeEventListener('websocket-send-failed', handleSendFailed as EventListener);
+        };
+    }, [toast]);
 
     useEffect(() => {
         if (gameId) {
@@ -129,6 +168,70 @@ export function GamePage() {
             console.error('역할 로드 실패', err);
         }
     };
+
+    // 게임 결과 데이터 로드
+    const loadGameResults = useCallback(async () => {
+        if (!gameId || !game || isLoadingResults) return;
+
+        try {
+            setIsLoadingResults(true);
+
+            // 1. 게임 정보 재조회 (최신 상태 반영)
+            const gameResponse = await gameApi.get(gameId);
+            const gameData = gameResponse.data;
+
+            // winnerTeam 설정
+            if (gameData.winnerTeam) {
+                setWinnerTeam(gameData.winnerTeam as 'CRIMINAL' | 'SUSPECT' | 'DETECTIVE');
+            }
+
+            // 시나리오 정보 설정
+            if (gameData.scenarioTitle || gameData.scenarioSummary) {
+                setScenarioInfo({
+                    title: gameData.scenarioTitle,
+                    summary: gameData.scenarioSummary,
+                });
+            }
+
+            // 2. 투표 결과 로드
+            try {
+                const round = gameData.investigationRound || game.round || 1;
+                const voteResponse = await voteApi.getResults(gameId, round);
+                const results = voteResponse.data.results;
+
+                // UUID -> 닉네임 매핑
+                const formattedResults = Object.entries(results).map(([playerId, count]) => {
+                    const player = gameData.players?.find(
+                        (p: { userId?: string; id?: string }) => p.userId === playerId || p.id === playerId
+                    );
+                    return {
+                        targetId: playerId,
+                        targetNickname: player?.nickname || 'Unknown',
+                        voteCount: count as number,
+                    };
+                }).sort((a, b) => b.voteCount - a.voteCount);
+
+                setVoteResults(formattedResults);
+            } catch (voteErr) {
+                console.error('투표 결과 로드 실패', voteErr);
+                // 투표 결과가 없어도 결과 화면은 표시
+            }
+
+            toast.success('결과 로드 완료', '게임 결과를 불러왔습니다.');
+        } catch (err) {
+            console.error('게임 결과 로드 실패', err);
+            toast.error('결과 로드 실패', '게임 결과를 불러오지 못했습니다.');
+        } finally {
+            setIsLoadingResults(false);
+        }
+    }, [gameId, game, isLoadingResults, toast]);
+
+    // 게임 종료 단계 진입 시 결과 로드
+    useEffect(() => {
+        if (game && (game.phase === 'CONCLUSION' || game.phase === 'FINISHED')) {
+            loadGameResults();
+        }
+    }, [game?.phase]);
 
     const handleSendMessage = (e: React.FormEvent) => {
         e.preventDefault();
@@ -225,7 +328,7 @@ export function GamePage() {
                 round={game.round}
                 maxRounds={game.maxRounds}
                 myRole={game.myRole}
-                wsStatus={wsStatus}
+                wsStatus={wsConnectionState === 'connected' ? 'connected' : wsConnectionState === 'connecting' ? 'connecting' : 'disconnected'}
                 onRoleClick={() => setShowRoleModal(true)}
             />
 
@@ -263,19 +366,22 @@ export function GamePage() {
 
                     {/* Game Result Section */}
                     {(game.phase === 'CONCLUSION' || game.phase === 'FINISHED') && (
-                        <GameResult
-                            winnerTeam={winnerTeam}
-                            players={game.players}
-                            voteResults={voteResults.length > 0 ? voteResults : game.players.map(p => ({
-                                targetId: p.id,
-                                targetNickname: p.nickname,
-                                voteCount: Math.floor(Math.random() * 5)
-                            }))}
-                            myRole={roleDetail ?? undefined}
-                            scenarioTitle={scenarioInfo.title}
-                            scenarioSummary={scenarioInfo.summary}
-                            onLeave={() => navigate('/rooms')}
-                        />
+                        isLoadingResults ? (
+                            <div className="game-result-loading">
+                                <div className="loading-spinner" />
+                                <p>게임 결과를 불러오는 중...</p>
+                            </div>
+                        ) : (
+                            <GameResult
+                                winnerTeam={winnerTeam}
+                                players={game.players}
+                                voteResults={voteResults}
+                                myRole={roleDetail ?? undefined}
+                                scenarioTitle={scenarioInfo.title}
+                                scenarioSummary={scenarioInfo.summary}
+                                onLeave={() => navigate('/rooms')}
+                            />
+                        )
                     )}
                 </main>
 
@@ -287,6 +393,15 @@ export function GamePage() {
                     onRoleCardClick={() => setShowRoleModal(true)}
                 />
             </div>
+
+            {/* WebSocket Connection Status */}
+            <ConnectionStatus
+                state={connectionState}
+                retryCount={retryCount}
+                maxRetries={maxRetries}
+                queuedMessageCount={queuedMessageCount}
+                onReconnect={reconnect}
+            />
 
             {/* Footer */}
             <footer className="game-footer">

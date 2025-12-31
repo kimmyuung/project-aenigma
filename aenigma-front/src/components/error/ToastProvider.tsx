@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import './ErrorStyles.css';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
@@ -76,6 +76,64 @@ export function ToastProvider({ children }: ToastProviderProps) {
     const info = useCallback((title: string, message?: string) => {
         addToast({ type: 'info', title, message });
     }, [addToast]);
+
+    // API 에러 이벤트 리스너
+    useEffect(() => {
+        const handleApiError = (event: CustomEvent<{
+            code: string;
+            message: string;
+            status: number;
+            shouldRedirect?: boolean;
+        }>) => {
+            const { message: errorMessage, status, shouldRedirect } = event.detail;
+
+            // 리다이렉트 예정인 경우 토스트만 간단히 표시
+            if (shouldRedirect) {
+                warning('세션 만료', errorMessage);
+                return;
+            }
+
+            // 서버 에러 (5xx)
+            if (status >= 500) {
+                error('서버 오류', errorMessage);
+                return;
+            }
+
+            // 인증 에러 (401)
+            if (status === 401) {
+                warning('로그인 필요', errorMessage);
+                return;
+            }
+
+            // 권한 에러 (403)
+            if (status === 403) {
+                warning('접근 제한', errorMessage);
+                return;
+            }
+
+            // 네트워크 에러
+            if (status === 0) {
+                error('네트워크 오류', errorMessage);
+                return;
+            }
+
+            // 기타 클라이언트 에러 (4xx)
+            error('요청 실패', errorMessage);
+        };
+
+        // WebSocket 에러 이벤트 리스너
+        const handleWebSocketError = (event: CustomEvent<{ message: string }>) => {
+            error('연결 오류', event.detail.message);
+        };
+
+        window.addEventListener('api-error', handleApiError as EventListener);
+        window.addEventListener('websocket-error', handleWebSocketError as EventListener);
+
+        return () => {
+            window.removeEventListener('api-error', handleApiError as EventListener);
+            window.removeEventListener('websocket-error', handleWebSocketError as EventListener);
+        };
+    }, [error, warning]);
 
     return (
         <ToastContext.Provider value={{ toasts, addToast, removeToast, success, error, warning, info }}>

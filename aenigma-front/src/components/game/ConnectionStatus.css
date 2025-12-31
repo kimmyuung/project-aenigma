@@ -1,0 +1,175 @@
+/* ConnectionStatus 컴포넌트 스타일 */
+
+.connection-status {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1000;
+
+    background: var(--glass-bg, rgba(255, 255, 255, 0.1));
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.2));
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 140px;
+    max-width: 320px;
+
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.connection-status:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+}
+
+.connection-status--expanded {
+    min-width: 280px;
+}
+
+/* 상태별 색상 */
+.connection-status--connected {
+    border-color: var(--success-color, #10b981);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
+}
+
+.connection-status--connecting {
+    border-color: var(--warning-color, #f59e0b);
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05));
+}
+
+.connection-status--reconnecting {
+    border-color: var(--warning-color, #f97316);
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(249, 115, 22, 0.05));
+    animation: pulse 2s infinite;
+}
+
+.connection-status--disconnected {
+    border-color: var(--error-color, #ef4444);
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05));
+}
+
+.connection-status--failed {
+    border-color: var(--error-color, #dc2626);
+    background: linear-gradient(135deg, rgba(220, 38, 38, 0.15), rgba(220, 38, 38, 0.08));
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* 메인 영역 */
+.connection-status__main {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.connection-status__icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.connection-status__text {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary, #f0f0f0);
+    white-space: nowrap;
+}
+
+.connection-status__queue {
+    font-size: 0.75rem;
+    color: var(--text-secondary, #a0a0a0);
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0.2rem 0.5rem;
+    border-radius: 8px;
+    margin-left: auto;
+}
+
+/* 상세 정보 */
+.connection-status__details {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+}
+
+.connection-status__info {
+    font-size: 0.8rem;
+    color: var(--text-secondary, #a0a0a0);
+    margin: 0 0 0.5rem 0;
+    line-height: 1.4;
+}
+
+.connection-status__queue-info {
+    font-size: 0.75rem;
+    color: var(--info-color, #3b82f6);
+    margin: 0 0 0.75rem 0;
+}
+
+.connection-status__reconnect-btn {
+    width: 100%;
+    padding: 0.6rem 1rem;
+    background: linear-gradient(135deg, var(--primary-color, #6366f1), var(--primary-hover, #4f46e5));
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.connection-status__reconnect-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.connection-status__reconnect-btn:active {
+    transform: translateY(0);
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+    .connection-status {
+        top: auto;
+        bottom: 5rem;
+        right: 1rem;
+        left: 1rem;
+        max-width: none;
+    }
+
+    .connection-status--expanded {
+        min-width: auto;
+    }
+}
+
+/* 다크 모드 대응 */
+@media (prefers-color-scheme: light) {
+    .connection-status {
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .connection-status__text {
+        color: #1f2937;
+    }
+
+    .connection-status__info {
+        color: #6b7280;
+    }
+}

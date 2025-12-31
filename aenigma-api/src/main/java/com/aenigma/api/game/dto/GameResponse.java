@@ -37,6 +37,16 @@ public class GameResponse {
     private String discordInvite;
 
     /**
+     * 시나리오 제목 (게임 종료 시에만 포함)
+     */
+    private String scenarioTitle;
+
+    /**
+     * 사건의 전말 (게임 종료 시에만 포함)
+     */
+    private String scenarioSummary;
+
+    /**
      * 플레이어 정보
      */
     @Data
@@ -83,7 +93,7 @@ public class GameResponse {
                 })
                 .toList();
 
-        return GameResponse.builder()
+        GameResponse.GameResponseBuilder responseBuilder = GameResponse.builder()
                 .id(game.getId())
                 .roomId(game.getRoom().getId())
                 .roundNumber(game.getRoundNumber())
@@ -93,7 +103,15 @@ public class GameResponse {
                 .players(playerInfos)
                 .startedAt(game.getStartedAt())
                 .finishedAt(game.getFinishedAt())
-                .discordInvite(discordInvite)
-                .build();
+                .discordInvite(discordInvite);
+
+        // 게임 종료 시에만 시나리오 정보 포함
+        if (game.getPhase() == GamePhase.FINISHED && game.getScenario() != null) {
+            responseBuilder
+                    .scenarioTitle(game.getScenario().getTitle())
+                    .scenarioSummary(game.getScenario().getCaseSummary());
+        }
+
+        return responseBuilder.build();
     }
 }

@@ -59,6 +59,9 @@ public class MarkdownScenarioParser implements ScenarioParser {
             // 배경 스토리 파싱
             scenario.setBackgroundStory(parseBackgroundStory(content));
 
+            // 사건의 전말 파싱 (게임 종료 후 공개)
+            scenario.setCaseSummary(parseCaseSummary(content));
+
             // 역할 파싱
             scenario.setRoles(parseRoles(content));
 
@@ -135,6 +138,21 @@ public class MarkdownScenarioParser implements ScenarioParser {
                 "##\\s*(?:📜\\s*)?배경\\s*스토리\\s*\\n([\\s\\S]*?)(?=\\n---\\n|\\n##\\s|$)",
                 Pattern.MULTILINE);
         Matcher matcher = storyPattern.matcher(content);
+        if (matcher.find()) {
+            return matcher.group(1).trim();
+        }
+        return null;
+    }
+
+    /**
+     * 사건의 전말 파싱 (게임 종료 후 공개)
+     */
+    private String parseCaseSummary(String content) {
+        // "## 📖 사건의 전말" 또는 "## 사건의 전말" 섹션 찾기
+        Pattern summaryPattern = Pattern.compile(
+                "##\\s*(?:📖\\s*)?사건의?\\s*전말\\s*\\n([\\s\\S]*?)(?=\\n---\\n|\\n##\\s|$)",
+                Pattern.MULTILINE);
+        Matcher matcher = summaryPattern.matcher(content);
         if (matcher.find()) {
             return matcher.group(1).trim();
         }
