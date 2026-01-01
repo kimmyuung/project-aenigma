@@ -47,18 +47,28 @@ export function ToastProvider({ children }: ToastProviderProps) {
     }, []);
 
     const addToast = useCallback((toast: Omit<Toast, 'id'>) => {
-        const id = crypto.randomUUID();
-        const newToast: Toast = { ...toast, id };
+        // 중복 토스트 방지: 동일 타입+제목의 토스트가 이미 있으면 무시
+        setToasts((prev) => {
+            const isDuplicate = prev.some(
+                (t) => t.type === toast.type && t.title === toast.title && t.message === toast.message
+            );
+            if (isDuplicate) {
+                return prev;
+            }
 
-        setToasts((prev) => [...prev, newToast]);
+            const id = crypto.randomUUID();
+            const newToast: Toast = { ...toast, id };
 
-        // 자동 제거 (기본 5초)
-        const duration = toast.duration ?? 5000;
-        if (duration > 0) {
-            setTimeout(() => {
-                removeToast(id);
-            }, duration);
-        }
+            // 자동 제거 (기본 5초)
+            const duration = toast.duration ?? 5000;
+            if (duration > 0) {
+                setTimeout(() => {
+                    removeToast(id);
+                }, duration);
+            }
+
+            return [...prev, newToast];
+        });
     }, [removeToast]);
 
     const success = useCallback((title: string, message?: string) => {
